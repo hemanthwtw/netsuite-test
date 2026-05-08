@@ -10,6 +10,7 @@ define([], function() {
             details: 'This script was deployed from GitHub successfully!'
         });
     }
+    
 
 
     return { execute: execute };
