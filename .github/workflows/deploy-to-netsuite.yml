@@ -1,63 +1,25 @@
-name: Deploy Changed Scripts to NetSuite
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'netsuite-test/src/FileCabinet/SuiteScripts/**'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install SuiteCloud CLI
-        run: npm install -g @oracle/suitecloud-cli --acceptsuitecloudsdklicense
-
-      - name: Create NetSuite credentials file
-        run: |
-          mkdir -p $HOME/.suitecloud-sdk
-          cat > $HOME/.suitecloud-sdk/cli-credentials.json << 'EOF'
-          {
-            "myNetSuiteAuth": {
-              "account": "${{ secrets.NS_ACCOUNT_ID }}",
-              "authId": "myNetSuiteAuth",
-              "tokenId": "${{ secrets.NS_TOKEN_ID }}",
-              "tokenSecret": "${{ secrets.NS_TOKEN_SECRET }}",
-              "consumerKey": "${{ secrets.NS_CONSUMER_KEY }}",
-              "consumerSecret": "${{ secrets.NS_CONSUMER_SECRET }}",
-              "domain": "https://system.netsuite.com",
-              "deploymentKey": ""
-            }
-          }
-          EOF
-          echo "Credentials file created:"
-          cat $HOME/.suitecloud-sdk/cli-credentials.json
-
-      - name: Get changed files and deploy
+- name: Get changed files and deploy
         working-directory: netsuite-test
         run: |
-          echo "All changed files in this commit:"
-          git diff --name-only HEAD~1 HEAD
+          echo "=== DEBUG: Check credentials file ==="
+          cat $HOME/.suitecloud-sdk/cli-credentials.json || echo "FILE NOT FOUND"
           
-          echo "Filtering SuiteScripts files:"
+          echo "=== DEBUG: Check suitecloud version ==="
+          suitecloud --version
+          
+          echo "=== DEBUG: List suitecloud commands ==="
+          suitecloud --help
+          
+          echo "=== DEBUG: Check project folder ==="
+          ls -la
+          cat suitecloud.config.js
+          
+          echo "=== Detecting changed files ==="
           git diff --name-only HEAD~1 HEAD | grep 'netsuite-test/src/FileCabinet/SuiteScripts/' | sed 's|netsuite-test/||' > changed_files.txt
-          
-          echo "Files to upload:"
           cat changed_files.txt
           
           if [ ! -s changed_files.txt ]; then
-            echo "No SuiteScript files changed. Skipping upload."
+            echo "No SuiteScript files changed."
             exit 0
           fi
           
@@ -65,7 +27,5 @@ jobs:
             if [ -f "$file" ]; then
               echo "Uploading: $file"
               suitecloud file:upload --paths "/$file"
-            else
-              echo "File not found: $file"
             fi
           done < changed_files.txt
