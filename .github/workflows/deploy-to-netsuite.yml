@@ -58,7 +58,7 @@ jobs:
           while IFS= read -r file; do
             if [ -f "$file" ]; then
               echo "Uploading: $file"
-              suitecloud file:upload --paths "/$file" --authid myNetSuiteAuth
+              suitecloud file:upload --paths "/$file"
             else
               echo "File not found: $file"
             fi
