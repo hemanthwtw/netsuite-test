@@ -24,15 +24,19 @@ jobs:
       - name: Install SuiteCloud CLI
         run: npm install -g @oracle/suitecloud-cli --acceptsuitecloudsdklicense
 
-      - name: Setup NetSuite Auth
+      - name: Create NetSuite credentials file
         run: |
-          suitecloud account:ci \
-            --authid myNetSuiteAuth \
-            --account ${{ secrets.NS_ACCOUNT_ID }} \
-            --tokenid ${{ secrets.NS_TOKEN_ID }} \
-            --tokensecret ${{ secrets.NS_TOKEN_SECRET }} \
-            --consumerkey ${{ secrets.NS_CONSUMER_KEY }} \
-            --consumersecret ${{ secrets.NS_CONSUMER_SECRET }}
+          mkdir -p $HOME/.oracle/suitecloud/credentials
+          cat > $HOME/.oracle/suitecloud/credentials/myNetSuiteAuth.json << EOF
+          {
+            "accountId": "${{ secrets.NS_ACCOUNT_ID }}",
+            "tokenId": "${{ secrets.NS_TOKEN_ID }}",
+            "tokenSecret": "${{ secrets.NS_TOKEN_SECRET }}",
+            "consumerKey": "${{ secrets.NS_CONSUMER_KEY }}",
+            "consumerSecret": "${{ secrets.NS_CONSUMER_SECRET }}",
+            "authId": "myNetSuiteAuth"
+          }
+          EOF
 
       - name: Get changed files and deploy
         working-directory: netsuite-test
