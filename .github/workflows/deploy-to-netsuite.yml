@@ -1,11 +1,10 @@
-name: Deploy Changed Scripts to NetSuite
+name: Deploy ALL Scripts to NetSuite (Debug Mode)
 
 on:
   push:
     branches:
       - main
-    paths:
-      - 'netsuite-test/src/FileCabinet/SuiteScripts/**'
+  workflow_dispatch:  # allows manual trigger from GitHub Actions tab
 
 jobs:
   deploy:
@@ -13,18 +12,20 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install oauth tools
-        run: npm install -g oauth-1.0a crypto-js
+      - name: Install dependencies locally
+        run: |
+          mkdir -p /tmp/nsdeploy
+          cd /tmp/nsdeploy
+          npm init -y
+          npm install oauth-1.0a
 
-      - name: Get changed files and upload to NetSuite
+      - name: Upload all SuiteScript files to NetSuite
         env:
           NS_ACCOUNT_ID: ${{ secrets.NS_ACCOUNT_ID }}
           NS_CONSUMER_KEY: ${{ secrets.NS_CONSUMER_KEY }}
@@ -33,19 +34,17 @@ jobs:
           NS_TOKEN_SECRET: ${{ secrets.NS_TOKEN_SECRET }}
           NS_SCRIPTS_FOLDER_ID: ${{ secrets.NS_SCRIPTS_FOLDER_ID }}
         run: |
-          git diff --name-only HEAD~1 HEAD | grep 'netsuite-test/src/FileCabinet/SuiteScripts/' > changed_files.txt
-          echo "Changed files:"
-          cat changed_files.txt
+          # Find all JS files in SuiteScripts folder
+          find netsuite-test/src/FileCabinet/SuiteScripts -name "*.js" > all_files.txt
+          echo "=== Files to upload ==="
+          cat all_files.txt
+          echo "======================"
 
-          if [ ! -s changed_files.txt ]; then
-            echo "No SuiteScript files changed. Skipping."
-            exit 0
-          fi
-
-          node << 'NODEJS'
+          node --require /tmp/nsdeploy/node_modules/oauth-1.0a << 'NODEJS'
           const fs = require('fs');
           const https = require('https');
           const crypto = require('crypto');
+          const OAuth = require('/tmp/nsdeploy/node_modules/oauth-1.0a');
 
           const accountId = process.env.NS_ACCOUNT_ID;
           const consumerKey = process.env.NS_CONSUMER_KEY;
@@ -54,51 +53,62 @@ jobs:
           const tokenSecret = process.env.NS_TOKEN_SECRET;
           const folderId = process.env.NS_SCRIPTS_FOLDER_ID;
 
-          function generateOAuthHeader(method, url) {
-            const timestamp = Math.floor(Date.now() / 1000).toString();
-            const nonce = crypto.randomBytes(16).toString('hex');
-            
-            const params = {
-              oauth_consumer_key: consumerKey,
-              oauth_nonce: nonce,
-              oauth_signature_method: 'HMAC-SHA256',
-              oauth_timestamp: timestamp,
-              oauth_token: tokenId,
-              oauth_version: '1.0'
-            };
-
-            const sortedParams = Object.keys(params).sort().map(k => 
-              `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`
-            ).join('&');
-
-            const baseString = `${method}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
-            const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
-            const signature = crypto.createHmac('sha256', signingKey).update(baseString).digest('base64');
-
-            params.oauth_signature = signature;
-            params.realm = accountId;
-
-            const header = 'OAuth ' + Object.keys(params).map(k =>
-              `${encodeURIComponent(k)}="${encodeURIComponent(params[k])}"`
-            ).join(', ');
-
-            return header;
+          // Validate all secrets are present
+          const missing = [];
+          if (!accountId) missing.push('NS_ACCOUNT_ID');
+          if (!consumerKey) missing.push('NS_CONSUMER_KEY');
+          if (!consumerSecret) missing.push('NS_CONSUMER_SECRET');
+          if (!tokenId) missing.push('NS_TOKEN_ID');
+          if (!tokenSecret) missing.push('NS_TOKEN_SECRET');
+          if (!folderId) missing.push('NS_SCRIPTS_FOLDER_ID');
+          if (missing.length > 0) {
+            console.error('MISSING SECRETS:', missing.join(', '));
+            process.exit(1);
           }
 
-          const files = fs.readFileSync('changed_files.txt', 'utf8').trim().split('\n').filter(Boolean);
+          console.log('Account ID:', accountId);
+          console.log('Folder ID:', folderId);
+          console.log('Consumer Key (first 6):', consumerKey.substring(0, 6) + '...');
+          console.log('Token ID (first 6):', tokenId.substring(0, 6) + '...');
+
+          // Build OAuth 1.0 TBA header using the oauth-1.0a library (more reliable)
+          const oauth = new OAuth({
+            consumer: { key: consumerKey, secret: consumerSecret },
+            signature_method: 'HMAC-SHA256',
+            hash_function(base_string, key) {
+              return crypto.createHmac('sha256', key).update(base_string).digest('base64');
+            },
+            realm: accountId
+          });
+
+          function generateAuthHeader(method, url) {
+            const token = { key: tokenId, secret: tokenSecret };
+            const requestData = { url, method };
+            const authObj = oauth.authorize(requestData, token);
+            return oauth.toHeader(authObj).Authorization;
+          }
 
           async function uploadFile(filepath) {
             const filename = filepath.split('/').pop();
-            const content = fs.readFileSync(filepath).toString('base64');
-            const url = `https://${accountId}.suitetalk.api.netsuite.com/services/rest/record/v1/file`;
-            
-            const body = JSON.stringify({
-              name: filename,
-              content: content,
-              folder: { id: folderId }
-            });
+            const fileContent = fs.readFileSync(filepath);
+            const contentBase64 = fileContent.toString('base64');
 
-            const authHeader = generateOAuthHeader('POST', url);
+            // NetSuite REST record URL for file upload
+            const url = `https://${accountId}.suitetalk.api.netsuite.com/services/rest/record/v1/file`;
+
+            const bodyObj = {
+              name: filename,
+              content: contentBase64,
+              folder: { id: folderId }
+            };
+            const body = JSON.stringify(bodyObj);
+
+            const authHeader = generateAuthHeader('POST', url);
+
+            console.log(`\n--- Uploading: ${filename} ---`);
+            console.log(`URL: ${url}`);
+            console.log(`File size: ${fileContent.length} bytes`);
+            console.log(`Auth header prefix: ${authHeader.substring(0, 80)}...`);
 
             return new Promise((resolve, reject) => {
               const urlObj = new URL(url);
@@ -117,24 +127,61 @@ jobs:
                 let data = '';
                 res.on('data', chunk => data += chunk);
                 res.on('end', () => {
-                  console.log(`${filename}: HTTP ${res.statusCode}`);
-                  console.log(data);
+                  console.log(`HTTP Status: ${res.statusCode} ${res.statusMessage}`);
+                  console.log('Response headers:', JSON.stringify(res.headers, null, 2));
+                  console.log('Response body:', data);
+
+                  if (res.statusCode === 200 || res.statusCode === 204) {
+                    console.log(`SUCCESS: ${filename} uploaded!`);
+                  } else if (res.statusCode === 409) {
+                    console.log(`NOTE: ${filename} already exists (409 Conflict). Try PATCH to update.`);
+                  } else {
+                    console.error(`FAILED: ${filename} - HTTP ${res.statusCode}`);
+                  }
                   resolve();
                 });
               });
 
-              req.on('error', reject);
+              req.on('error', (err) => {
+                console.error(`Network error for ${filename}:`, err.message);
+                reject(err);
+              });
+
               req.write(body);
               req.end();
             });
           }
 
           (async () => {
+            const files = fs.readFileSync('all_files.txt', 'utf8')
+              .trim().split('\n').filter(Boolean);
+
+            if (files.length === 0) {
+              console.log('No .js files found in SuiteScripts folder!');
+              process.exit(0);
+            }
+
+            console.log(`\nUploading ${files.length} file(s)...`);
+
+            let successCount = 0;
+            let failCount = 0;
+
             for (const file of files) {
               if (fs.existsSync(file)) {
-                console.log(`Uploading: ${file}`);
-                await uploadFile(file);
+                try {
+                  await uploadFile(file);
+                  successCount++;
+                } catch (err) {
+                  console.error(`Error uploading ${file}:`, err.message);
+                  failCount++;
+                }
+              } else {
+                console.warn(`File not found: ${file}`);
               }
             }
+
+            console.log(`\n=== SUMMARY ===`);
+            console.log(`Success: ${successCount}`);
+            console.log(`Failed:  ${failCount}`);
           })();
           NODEJS
