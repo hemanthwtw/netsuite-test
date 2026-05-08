@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'src/FileCabinet/SuiteScripts/**'
+      - 'netsuite-test/src/FileCabinet/SuiteScripts/**'
 
 jobs:
   deploy:
@@ -36,8 +36,9 @@ jobs:
             --no-interactive
 
       - name: Get changed files and deploy
+        working-directory: netsuite-test
         run: |
-          git diff --name-only HEAD~1 HEAD -- 'src/FileCabinet/SuiteScripts/**' > changed_files.txt
+          git diff --name-only HEAD~1 HEAD -- 'netsuite-test/src/FileCabinet/SuiteScripts/**' | sed 's|netsuite-test/||' > changed_files.txt
           echo "Changed files:"
           cat changed_files.txt
           while IFS= read -r file; do
