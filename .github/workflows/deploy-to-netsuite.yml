@@ -26,14 +26,13 @@ jobs:
 
       - name: Setup NetSuite Auth
         run: |
-          suitecloud account:setup \
+          suitecloud account:ci \
             --authid myNetSuiteAuth \
             --account ${{ secrets.NS_ACCOUNT_ID }} \
             --tokenid ${{ secrets.NS_TOKEN_ID }} \
             --tokensecret ${{ secrets.NS_TOKEN_SECRET }} \
             --consumerkey ${{ secrets.NS_CONSUMER_KEY }} \
-            --consumersecret ${{ secrets.NS_CONSUMER_SECRET }} \
-            --no-interactive
+            --consumersecret ${{ secrets.NS_CONSUMER_SECRET }}
 
       - name: Get changed files and deploy
         working-directory: netsuite-test
