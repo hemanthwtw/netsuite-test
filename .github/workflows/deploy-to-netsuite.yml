@@ -26,17 +26,19 @@ jobs:
 
       - name: Create NetSuite credentials file
         run: |
-          mkdir -p $HOME/.oracle/suitecloud/credentials
-          cat > $HOME/.oracle/suitecloud/credentials/myNetSuiteAuth.json << EOF
-          {
+          mkdir -p $HOME/.suitecloud-sdk/credentials
+          echo '{
             "accountId": "${{ secrets.NS_ACCOUNT_ID }}",
             "tokenId": "${{ secrets.NS_TOKEN_ID }}",
             "tokenSecret": "${{ secrets.NS_TOKEN_SECRET }}",
             "consumerKey": "${{ secrets.NS_CONSUMER_KEY }}",
             "consumerSecret": "${{ secrets.NS_CONSUMER_SECRET }}",
-            "authId": "myNetSuiteAuth"
-          }
-          EOF
+            "authId": "myNetSuiteAuth",
+            "domain": "https://system.netsuite.com"
+          }' > $HOME/.suitecloud-sdk/credentials/myNetSuiteAuth.json
+          
+          cd netsuite-test
+          echo '{"defaultAuthId": "myNetSuiteAuth"}' > .suitecloud-credentials.json
 
       - name: Get changed files and deploy
         working-directory: netsuite-test
