@@ -26,19 +26,23 @@ jobs:
 
       - name: Create NetSuite credentials file
         run: |
-          mkdir -p $HOME/.suitecloud-sdk/credentials
-          echo '{
-            "accountId": "${{ secrets.NS_ACCOUNT_ID }}",
-            "tokenId": "${{ secrets.NS_TOKEN_ID }}",
-            "tokenSecret": "${{ secrets.NS_TOKEN_SECRET }}",
-            "consumerKey": "${{ secrets.NS_CONSUMER_KEY }}",
-            "consumerSecret": "${{ secrets.NS_CONSUMER_SECRET }}",
-            "authId": "myNetSuiteAuth",
-            "domain": "https://system.netsuite.com"
-          }' > $HOME/.suitecloud-sdk/credentials/myNetSuiteAuth.json
-          
-          cd netsuite-test
-          echo '{"defaultAuthId": "myNetSuiteAuth"}' > .suitecloud-credentials.json
+          mkdir -p $HOME/.suitecloud-sdk
+          cat > $HOME/.suitecloud-sdk/cli-credentials.json << 'EOF'
+          {
+            "myNetSuiteAuth": {
+              "account": "${{ secrets.NS_ACCOUNT_ID }}",
+              "authId": "myNetSuiteAuth",
+              "tokenId": "${{ secrets.NS_TOKEN_ID }}",
+              "tokenSecret": "${{ secrets.NS_TOKEN_SECRET }}",
+              "consumerKey": "${{ secrets.NS_CONSUMER_KEY }}",
+              "consumerSecret": "${{ secrets.NS_CONSUMER_SECRET }}",
+              "domain": "https://system.netsuite.com",
+              "deploymentKey": ""
+            }
+          }
+          EOF
+          echo "Credentials file created:"
+          cat $HOME/.suitecloud-sdk/cli-credentials.json
 
       - name: Get changed files and deploy
         working-directory: netsuite-test
