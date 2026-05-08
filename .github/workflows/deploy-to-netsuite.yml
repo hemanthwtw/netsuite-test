@@ -16,7 +16,22 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install oauth tools
+        run: npm install -g oauth-1.0a crypto-js
+
       - name: Get changed files and upload to NetSuite
+        env:
+          NS_ACCOUNT_ID: ${{ secrets.NS_ACCOUNT_ID }}
+          NS_CONSUMER_KEY: ${{ secrets.NS_CONSUMER_KEY }}
+          NS_CONSUMER_SECRET: ${{ secrets.NS_CONSUMER_SECRET }}
+          NS_TOKEN_ID: ${{ secrets.NS_TOKEN_ID }}
+          NS_TOKEN_SECRET: ${{ secrets.NS_TOKEN_SECRET }}
+          NS_SCRIPTS_FOLDER_ID: ${{ secrets.NS_SCRIPTS_FOLDER_ID }}
         run: |
           git diff --name-only HEAD~1 HEAD | grep 'netsuite-test/src/FileCabinet/SuiteScripts/' > changed_files.txt
           echo "Changed files:"
@@ -27,26 +42,99 @@ jobs:
             exit 0
           fi
 
-          while IFS= read -r filepath; do
-            if [ -f "$filepath" ]; then
-              FILENAME=$(basename "$filepath")
-              CONTENT=$(base64 -w 0 "$filepath")
-              NS_PATH=$(echo "$filepath" | sed 's|netsuite-test/src/FileCabinet||')
+          node << 'NODEJS'
+          const fs = require('fs');
+          const https = require('https');
+          const crypto = require('crypto');
 
-              echo "Uploading $FILENAME to NetSuite path: $NS_PATH"
+          const accountId = process.env.NS_ACCOUNT_ID;
+          const consumerKey = process.env.NS_CONSUMER_KEY;
+          const consumerSecret = process.env.NS_CONSUMER_SECRET;
+          const tokenId = process.env.NS_TOKEN_ID;
+          const tokenSecret = process.env.NS_TOKEN_SECRET;
+          const folderId = process.env.NS_SCRIPTS_FOLDER_ID;
 
-              RESPONSE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
-                --location \
-                --request POST "https://${{ secrets.NS_ACCOUNT_ID }}.suitetalk.api.netsuite.com/services/rest/record/v1/file" \
-                --header "Content-Type: application/json" \
-                --header "Authorization: NLAuth nlauth_account=${{ secrets.NS_ACCOUNT_ID }},nlauth_email=${{ secrets.NS_EMAIL }},nlauth_signature=${{ secrets.NS_PASSWORD }},nlauth_role=3" \
-                --data "{
-                  \"name\": \"$FILENAME\",
-                  \"content\": \"$CONTENT\",
-                  \"folder\": {\"id\": \"${{ secrets.NS_SCRIPTS_FOLDER_ID }}\"}
-                }")
+          function generateOAuthHeader(method, url) {
+            const timestamp = Math.floor(Date.now() / 1000).toString();
+            const nonce = crypto.randomBytes(16).toString('hex');
+            
+            const params = {
+              oauth_consumer_key: consumerKey,
+              oauth_nonce: nonce,
+              oauth_signature_method: 'HMAC-SHA256',
+              oauth_timestamp: timestamp,
+              oauth_token: tokenId,
+              oauth_version: '1.0'
+            };
 
-              echo "HTTP Status: $RESPONSE"
-              cat /tmp/response.txt
-            fi
-          done < changed_files.txt
+            const sortedParams = Object.keys(params).sort().map(k => 
+              `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`
+            ).join('&');
+
+            const baseString = `${method}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
+            const signingKey = `${encodeURIComponent(consumerSecret)}&${encodeURIComponent(tokenSecret)}`;
+            const signature = crypto.createHmac('sha256', signingKey).update(baseString).digest('base64');
+
+            params.oauth_signature = signature;
+            params.realm = accountId;
+
+            const header = 'OAuth ' + Object.keys(params).map(k =>
+              `${encodeURIComponent(k)}="${encodeURIComponent(params[k])}"`
+            ).join(', ');
+
+            return header;
+          }
+
+          const files = fs.readFileSync('changed_files.txt', 'utf8').trim().split('\n').filter(Boolean);
+
+          async function uploadFile(filepath) {
+            const filename = filepath.split('/').pop();
+            const content = fs.readFileSync(filepath).toString('base64');
+            const url = `https://${accountId}.suitetalk.api.netsuite.com/services/rest/record/v1/file`;
+            
+            const body = JSON.stringify({
+              name: filename,
+              content: content,
+              folder: { id: folderId }
+            });
+
+            const authHeader = generateOAuthHeader('POST', url);
+
+            return new Promise((resolve, reject) => {
+              const urlObj = new URL(url);
+              const options = {
+                hostname: urlObj.hostname,
+                path: urlObj.pathname,
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': authHeader,
+                  'Content-Length': Buffer.byteLength(body)
+                }
+              };
+
+              const req = https.request(options, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                  console.log(`${filename}: HTTP ${res.statusCode}`);
+                  console.log(data);
+                  resolve();
+                });
+              });
+
+              req.on('error', reject);
+              req.write(body);
+              req.end();
+            });
+          }
+
+          (async () => {
+            for (const file of files) {
+              if (fs.existsSync(file)) {
+                console.log(`Uploading: ${file}`);
+                await uploadFile(file);
+              }
+            }
+          })();
+          NODEJS
