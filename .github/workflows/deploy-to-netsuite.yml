@@ -41,12 +41,25 @@ jobs:
       - name: Get changed files and deploy
         working-directory: netsuite-test
         run: |
-          git diff --name-only HEAD~1 HEAD -- 'netsuite-test/src/FileCabinet/SuiteScripts/**' | sed 's|netsuite-test/||' > changed_files.txt
-          echo "Changed files:"
+          echo "All changed files in this commit:"
+          git diff --name-only HEAD~1 HEAD
+          
+          echo "Filtering SuiteScripts files:"
+          git diff --name-only HEAD~1 HEAD | grep 'netsuite-test/src/FileCabinet/SuiteScripts/' | sed 's|netsuite-test/||' > changed_files.txt
+          
+          echo "Files to upload:"
           cat changed_files.txt
+          
+          if [ ! -s changed_files.txt ]; then
+            echo "No SuiteScript files changed. Skipping upload."
+            exit 0
+          fi
+          
           while IFS= read -r file; do
             if [ -f "$file" ]; then
               echo "Uploading: $file"
-              suitecloud file:upload --paths "$file" --authid myNetSuiteAuth
+              suitecloud file:upload --paths "/$file" --authid myNetSuiteAuth
+            else
+              echo "File not found: $file"
             fi
           done < changed_files.txt
