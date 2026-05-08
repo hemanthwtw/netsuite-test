@@ -1,31 +1,52 @@
-- name: Get changed files and deploy
-        working-directory: netsuite-test
+name: Deploy Changed Scripts to NetSuite
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'netsuite-test/src/FileCabinet/SuiteScripts/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Get changed files and upload to NetSuite
         run: |
-          echo "=== DEBUG: Check credentials file ==="
-          cat $HOME/.suitecloud-sdk/cli-credentials.json || echo "FILE NOT FOUND"
-          
-          echo "=== DEBUG: Check suitecloud version ==="
-          suitecloud --version
-          
-          echo "=== DEBUG: List suitecloud commands ==="
-          suitecloud --help
-          
-          echo "=== DEBUG: Check project folder ==="
-          ls -la
-          cat suitecloud.config.js
-          
-          echo "=== Detecting changed files ==="
-          git diff --name-only HEAD~1 HEAD | grep 'netsuite-test/src/FileCabinet/SuiteScripts/' | sed 's|netsuite-test/||' > changed_files.txt
+          git diff --name-only HEAD~1 HEAD | grep 'netsuite-test/src/FileCabinet/SuiteScripts/' > changed_files.txt
+          echo "Changed files:"
           cat changed_files.txt
-          
+
           if [ ! -s changed_files.txt ]; then
-            echo "No SuiteScript files changed."
+            echo "No SuiteScript files changed. Skipping."
             exit 0
           fi
-          
-          while IFS= read -r file; do
-            if [ -f "$file" ]; then
-              echo "Uploading: $file"
-              suitecloud file:upload --paths "/$file"
+
+          while IFS= read -r filepath; do
+            if [ -f "$filepath" ]; then
+              FILENAME=$(basename "$filepath")
+              CONTENT=$(base64 -w 0 "$filepath")
+              NS_PATH=$(echo "$filepath" | sed 's|netsuite-test/src/FileCabinet||')
+
+              echo "Uploading $FILENAME to NetSuite path: $NS_PATH"
+
+              RESPONSE=$(curl -s -o /tmp/response.txt -w "%{http_code}" \
+                --location \
+                --request POST "https://${{ secrets.NS_ACCOUNT_ID }}.suitetalk.api.netsuite.com/services/rest/record/v1/file" \
+                --header "Content-Type: application/json" \
+                --header "Authorization: NLAuth nlauth_account=${{ secrets.NS_ACCOUNT_ID }},nlauth_email=${{ secrets.NS_EMAIL }},nlauth_signature=${{ secrets.NS_PASSWORD }},nlauth_role=3" \
+                --data "{
+                  \"name\": \"$FILENAME\",
+                  \"content\": \"$CONTENT\",
+                  \"folder\": {\"id\": \"${{ secrets.NS_SCRIPTS_FOLDER_ID }}\"}
+                }")
+
+              echo "HTTP Status: $RESPONSE"
+              cat /tmp/response.txt
             fi
           done < changed_files.txt
