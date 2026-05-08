@@ -1,4 +1,5 @@
-// v3 - testing GitHub to NetSuite deployment
+// v4 - testing GitHub to NetSuite deployment
+// v4
 /**
  * @NApiVersion 2.1
  * @NScriptType ScheduledScript
