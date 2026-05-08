@@ -1,0 +1,48 @@
+name: Deploy Changed Scripts to NetSuite
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/FileCabinet/SuiteScripts/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install SuiteCloud CLI
+        run: npm install -g @oracle/suitecloud-cli
+
+      - name: Setup NetSuite Auth
+        run: |
+          suitecloud account:setup \
+            --authid myNetSuiteAuth \
+            --account ${{ secrets.NS_ACCOUNT_ID }} \
+            --tokenid ${{ secrets.NS_TOKEN_ID }} \
+            --tokensecret ${{ secrets.NS_TOKEN_SECRET }} \
+            --consumerkey ${{ secrets.NS_CONSUMER_KEY }} \
+            --consumersecret ${{ secrets.NS_CONSUMER_SECRET }} \
+            --no-interactive
+
+      - name: Get changed files and deploy
+        run: |
+          git diff --name-only HEAD~1 HEAD -- 'src/FileCabinet/SuiteScripts/**' > changed_files.txt
+          echo "Changed files:"
+          cat changed_files.txt
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              echo "Uploading: $file"
+              suitecloud file:upload --paths "$file" --authid myNetSuiteAuth
+            fi
+          done < changed_files.txt
