@@ -4,6 +4,7 @@
  * @NModuleScope SameAccount
  */
 //v1
+//v2
 define(['N/ui/serverWidget'], (serverWidget) => {
 
     /**
