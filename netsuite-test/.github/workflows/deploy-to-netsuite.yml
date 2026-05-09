@@ -6,11 +6,11 @@ on:
       - main
     paths:
       - 'netsuite-test/src/FileCabinet/SuiteScripts/**'
-  workflow_dispatch:  # allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # slightly faster than ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -22,7 +22,16 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
+      # SPEED IMPROVEMENT 1 — Cache npm packages
+      - name: Cache npm dependencies
+        id: cache-npm
+        uses: actions/cache@v3
+        with:
+          path: /tmp/nsdeploy
+          key: npm-oauth-v1
+
+      - name: Install dependencies (only if cache miss)
+        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: |
           mkdir -p /tmp/nsdeploy
           cd /tmp/nsdeploy
@@ -88,7 +97,6 @@ jobs:
           async function uploadFile(filepath) {
             const filename = filepath.split('/').pop();
             const fileContents = fs.readFileSync(filepath, 'utf8');
-
             const url = `https://${accountIdLower}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=${restletScript}&deploy=${restletDeploy}`;
 
             const body = JSON.stringify({
@@ -99,9 +107,7 @@ jobs:
 
             const authHeader = generateAuthHeader('POST', url);
 
-            console.log(`\n--- Uploading: ${filename} ---`);
-
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
               const urlObj = new URL(url);
               const options = {
                 hostname: urlObj.hostname,
@@ -118,26 +124,25 @@ jobs:
                 let data = '';
                 res.on('data', chunk => data += chunk);
                 res.on('end', () => {
-                  console.log(`HTTP Status: ${res.statusCode}`);
-                  console.log(`Response: ${data}`);
-
                   try {
                     const parsed = JSON.parse(data);
                     if (parsed.success) {
-                      console.log(`✅ SUCCESS: ${filename} uploaded! File ID: ${parsed.fileId}`);
+                      console.log(`✅ SUCCESS: ${filename} → File ID: ${parsed.fileId}`);
+                      resolve({ success: true, file: filename });
                     } else {
-                      console.error(`❌ FAILED: ${filename} - ${parsed.error}`);
+                      console.error(`❌ FAILED: ${filename} → ${parsed.error}`);
+                      resolve({ success: false, file: filename });
                     }
                   } catch(e) {
-                    console.log(`Raw response: ${data}`);
+                    console.error(`❌ ERROR: ${filename} → ${data}`);
+                    resolve({ success: false, file: filename });
                   }
-                  resolve();
                 });
               });
 
               req.on('error', (err) => {
-                console.error(`Network error: ${err.message}`);
-                reject(err);
+                console.error(`❌ NETWORK ERROR: ${filename} → ${err.message}`);
+                resolve({ success: false, file: filename });
               });
 
               req.write(body);
@@ -147,30 +152,27 @@ jobs:
 
           (async () => {
             const files = fs.readFileSync('changed_files.txt', 'utf8')
-              .trim().split('\n').filter(Boolean);
+              .trim().split('\n')
+              .filter(Boolean)
+              .filter(f => fs.existsSync(f));
 
-            console.log(`\nDeploying ${files.length} file(s) to NetSuite...`);
-
-            let success = 0;
-            let failed = 0;
-
-            for (const file of files) {
-              if (fs.existsSync(file)) {
-                try {
-                  await uploadFile(file);
-                  success++;
-                } catch (err) {
-                  console.error(`Error: ${err.message}`);
-                  failed++;
-                }
-              } else {
-                console.warn(`File not found: ${file}`);
-              }
+            if (files.length === 0) {
+              console.log('No valid files to upload.');
+              process.exit(0);
             }
+
+            console.log(`\nDeploying ${files.length} file(s) in parallel...\n`);
+
+            // SPEED IMPROVEMENT 2 — Upload all files at the same time
+            const results = await Promise.all(files.map(uploadFile));
+
+            const success = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success).length;
 
             console.log(`\n=== SUMMARY ===`);
             console.log(`✅ Success: ${success}`);
             console.log(`❌ Failed:  ${failed}`);
+            console.log(`⏱️  Total files: ${files.length}`);
 
             if (failed > 0) process.exit(1);
           })();
