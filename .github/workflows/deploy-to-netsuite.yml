@@ -37,7 +37,7 @@ jobs:
           NS_TOKEN_ID: ${{ secrets.NS_TOKEN_ID }}
           NS_TOKEN_SECRET: ${{ secrets.NS_TOKEN_SECRET }}
           NS_SCRIPTS_FOLDER_ID: ${{ secrets.NS_SCRIPTS_FOLDER_ID }}
-          NS_RESTLET_SCRIPT: 3020
+          NS_RESTLET_SCRIPT: 2818
           NS_RESTLET_DEPLOY: 1
         run: |
           # Get only changed SuiteScript files
