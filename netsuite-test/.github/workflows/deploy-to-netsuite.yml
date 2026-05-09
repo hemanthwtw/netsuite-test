@@ -58,7 +58,8 @@ jobs:
           const crypto = require('crypto');
           const OAuth = require('/tmp/nsdeploy/node_modules/oauth-1.0a');
 
-          const accountId = process.env.NS_ACCOUNT_ID;
+          const accountId = process.env.NS_ACCOUNT_ID.toUpperCase();
+          const accountIdLower = process.env.NS_ACCOUNT_ID.toLowerCase();
           const consumerKey = process.env.NS_CONSUMER_KEY;
           const consumerSecret = process.env.NS_CONSUMER_SECRET;
           const tokenId = process.env.NS_TOKEN_ID;
@@ -88,7 +89,7 @@ jobs:
             const filename = filepath.split('/').pop();
             const fileContents = fs.readFileSync(filepath, 'utf8');
 
-            const url = `https://${accountId}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=${restletScript}&deploy=${restletDeploy}`;
+            const url = `https://${accountIdLower}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=${restletScript}&deploy=${restletDeploy}`;
 
             const body = JSON.stringify({
               name: filename,
