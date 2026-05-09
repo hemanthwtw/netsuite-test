@@ -1,9 +1,11 @@
-name: Deploy ALL Scripts to NetSuite (Debug Mode)
+name: Deploy Changed Scripts to NetSuite
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'netsuite-test/src/FileCabinet/SuiteScripts/**'
   workflow_dispatch:  # allows manual trigger from GitHub Actions tab
 
 jobs:
@@ -12,20 +14,22 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install dependencies locally
+      - name: Install dependencies
         run: |
           mkdir -p /tmp/nsdeploy
           cd /tmp/nsdeploy
           npm init -y
           npm install oauth-1.0a
 
-      - name: Upload all SuiteScript files to NetSuite
+      - name: Deploy changed files to NetSuite
         env:
           NS_ACCOUNT_ID: ${{ secrets.NS_ACCOUNT_ID }}
           NS_CONSUMER_KEY: ${{ secrets.NS_CONSUMER_KEY }}
@@ -33,14 +37,22 @@ jobs:
           NS_TOKEN_ID: ${{ secrets.NS_TOKEN_ID }}
           NS_TOKEN_SECRET: ${{ secrets.NS_TOKEN_SECRET }}
           NS_SCRIPTS_FOLDER_ID: ${{ secrets.NS_SCRIPTS_FOLDER_ID }}
+          NS_RESTLET_SCRIPT: 3020
+          NS_RESTLET_DEPLOY: 1
         run: |
-          # Find all JS files in SuiteScripts folder
-          find netsuite-test/src/FileCabinet/SuiteScripts -name "*.js" > all_files.txt
-          echo "=== Files to upload ==="
-          cat all_files.txt
-          echo "======================"
+          # Get only changed SuiteScript files
+          git diff --name-only HEAD~1 HEAD | grep 'netsuite-test/src/FileCabinet/SuiteScripts/' > changed_files.txt || true
 
-          node --require /tmp/nsdeploy/node_modules/oauth-1.0a << 'NODEJS'
+          echo "=== Changed files ==="
+          cat changed_files.txt
+          echo "===================="
+
+          if [ ! -s changed_files.txt ]; then
+            echo "No SuiteScript files changed. Skipping."
+            exit 0
+          fi
+
+          node << 'NODEJS'
           const fs = require('fs');
           const https = require('https');
           const crypto = require('crypto');
@@ -51,27 +63,11 @@ jobs:
           const consumerSecret = process.env.NS_CONSUMER_SECRET;
           const tokenId = process.env.NS_TOKEN_ID;
           const tokenSecret = process.env.NS_TOKEN_SECRET;
-          const folderId = process.env.NS_SCRIPTS_FOLDER_ID;
+          const folderId = parseInt(process.env.NS_SCRIPTS_FOLDER_ID);
+          const restletScript = process.env.NS_RESTLET_SCRIPT;
+          const restletDeploy = process.env.NS_RESTLET_DEPLOY;
 
-          // Validate all secrets are present
-          const missing = [];
-          if (!accountId) missing.push('NS_ACCOUNT_ID');
-          if (!consumerKey) missing.push('NS_CONSUMER_KEY');
-          if (!consumerSecret) missing.push('NS_CONSUMER_SECRET');
-          if (!tokenId) missing.push('NS_TOKEN_ID');
-          if (!tokenSecret) missing.push('NS_TOKEN_SECRET');
-          if (!folderId) missing.push('NS_SCRIPTS_FOLDER_ID');
-          if (missing.length > 0) {
-            console.error('MISSING SECRETS:', missing.join(', '));
-            process.exit(1);
-          }
-
-          console.log('Account ID:', accountId);
-          console.log('Folder ID:', folderId);
-          console.log('Consumer Key (first 6):', consumerKey.substring(0, 6) + '...');
-          console.log('Token ID (first 6):', tokenId.substring(0, 6) + '...');
-
-          // Build OAuth 1.0 TBA header using the oauth-1.0a library (more reliable)
+          // OAuth setup
           const oauth = new OAuth({
             consumer: { key: consumerKey, secret: consumerSecret },
             signature_method: 'HMAC-SHA256',
@@ -90,31 +86,25 @@ jobs:
 
           async function uploadFile(filepath) {
             const filename = filepath.split('/').pop();
-            const fileContent = fs.readFileSync(filepath);
-            const contentBase64 = fileContent.toString('base64');
+            const fileContents = fs.readFileSync(filepath, 'utf8');
 
-            // NetSuite REST record URL for file upload
-            const url = `https://${accountId}.suitetalk.api.netsuite.com/services/rest/record/v1/file`;
+            const url = `https://${accountId}.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=${restletScript}&deploy=${restletDeploy}`;
 
-            const bodyObj = {
+            const body = JSON.stringify({
               name: filename,
-              content: contentBase64,
-              folder: { id: folderId }
-            };
-            const body = JSON.stringify(bodyObj);
+              contents: fileContents,
+              folderId: folderId
+            });
 
             const authHeader = generateAuthHeader('POST', url);
 
             console.log(`\n--- Uploading: ${filename} ---`);
-            console.log(`URL: ${url}`);
-            console.log(`File size: ${fileContent.length} bytes`);
-            console.log(`Auth header prefix: ${authHeader.substring(0, 80)}...`);
 
             return new Promise((resolve, reject) => {
               const urlObj = new URL(url);
               const options = {
                 hostname: urlObj.hostname,
-                path: urlObj.pathname,
+                path: urlObj.pathname + urlObj.search,
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -127,23 +117,25 @@ jobs:
                 let data = '';
                 res.on('data', chunk => data += chunk);
                 res.on('end', () => {
-                  console.log(`HTTP Status: ${res.statusCode} ${res.statusMessage}`);
-                  console.log('Response headers:', JSON.stringify(res.headers, null, 2));
-                  console.log('Response body:', data);
+                  console.log(`HTTP Status: ${res.statusCode}`);
+                  console.log(`Response: ${data}`);
 
-                  if (res.statusCode === 200 || res.statusCode === 204) {
-                    console.log(`SUCCESS: ${filename} uploaded!`);
-                  } else if (res.statusCode === 409) {
-                    console.log(`NOTE: ${filename} already exists (409 Conflict). Try PATCH to update.`);
-                  } else {
-                    console.error(`FAILED: ${filename} - HTTP ${res.statusCode}`);
+                  try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.success) {
+                      console.log(`✅ SUCCESS: ${filename} uploaded! File ID: ${parsed.fileId}`);
+                    } else {
+                      console.error(`❌ FAILED: ${filename} - ${parsed.error}`);
+                    }
+                  } catch(e) {
+                    console.log(`Raw response: ${data}`);
                   }
                   resolve();
                 });
               });
 
               req.on('error', (err) => {
-                console.error(`Network error for ${filename}:`, err.message);
+                console.error(`Network error: ${err.message}`);
                 reject(err);
               });
 
@@ -153,27 +145,22 @@ jobs:
           }
 
           (async () => {
-            const files = fs.readFileSync('all_files.txt', 'utf8')
+            const files = fs.readFileSync('changed_files.txt', 'utf8')
               .trim().split('\n').filter(Boolean);
 
-            if (files.length === 0) {
-              console.log('No .js files found in SuiteScripts folder!');
-              process.exit(0);
-            }
+            console.log(`\nDeploying ${files.length} file(s) to NetSuite...`);
 
-            console.log(`\nUploading ${files.length} file(s)...`);
-
-            let successCount = 0;
-            let failCount = 0;
+            let success = 0;
+            let failed = 0;
 
             for (const file of files) {
               if (fs.existsSync(file)) {
                 try {
                   await uploadFile(file);
-                  successCount++;
+                  success++;
                 } catch (err) {
-                  console.error(`Error uploading ${file}:`, err.message);
-                  failCount++;
+                  console.error(`Error: ${err.message}`);
+                  failed++;
                 }
               } else {
                 console.warn(`File not found: ${file}`);
@@ -181,7 +168,9 @@ jobs:
             }
 
             console.log(`\n=== SUMMARY ===`);
-            console.log(`Success: ${successCount}`);
-            console.log(`Failed:  ${failCount}`);
+            console.log(`✅ Success: ${success}`);
+            console.log(`❌ Failed:  ${failed}`);
+
+            if (failed > 0) process.exit(1);
           })();
           NODEJS
