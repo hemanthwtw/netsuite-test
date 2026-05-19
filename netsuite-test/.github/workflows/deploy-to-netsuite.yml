@@ -13,19 +13,19 @@ jobs:
     runs-on: ubuntu-22.04  # slightly faster than ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       # SPEED IMPROVEMENT 1 — Cache npm packages
       - name: Cache npm dependencies
         id: cache-npm
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/nsdeploy
           key: npm-oauth-v1
