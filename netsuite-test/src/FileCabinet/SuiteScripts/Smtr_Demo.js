@@ -2361,8 +2361,8 @@ define(['N/log', 'N/file'],
 
         if (openBtn && modal) {
             openBtn.addEventListener('click', function() {
-                var dashboardView = document.getElementById('dashboard-view');
-                if (dashboardView) dashboardView.style.display = 'none';
+                var dashElements = document.querySelectorAll('#dashboard-view > .page-header, #dashboard-view > .cards-grid, #dashboard-view > .table-card');
+                dashElements.forEach(function(el) { el.style.display = 'none'; });
                 modal.classList.add('open');
                 window.scrollTo(0, 0);
             });
@@ -2370,8 +2370,8 @@ define(['N/log', 'N/file'],
 
         if (closeBtn && modal) {
             closeBtn.addEventListener('click', function() {
-                var dashboardView = document.getElementById('dashboard-view');
-                if (dashboardView) dashboardView.style.display = 'block';
+                var dashElements = document.querySelectorAll('#dashboard-view > .page-header, #dashboard-view > .cards-grid, #dashboard-view > .table-card');
+                dashElements.forEach(function(el) { el.style.display = ''; });
                 modal.classList.remove('open');
             });
         }
@@ -2415,8 +2415,8 @@ define(['N/log', 'N/file'],
                 setTimeout(function() {
                     alert('Request submitted successfully for approval.');
                     if (modal) {
-                        var dashboardView = document.getElementById('dashboard-view');
-                        if (dashboardView) dashboardView.style.display = 'block';
+                        var dashElements = document.querySelectorAll('#dashboard-view > .page-header, #dashboard-view > .cards-grid, #dashboard-view > .table-card');
+                        dashElements.forEach(function(el) { el.style.display = ''; });
                         modal.classList.remove('open');
                     }
                     btnSubmitRequest.innerHTML = oldHtml;
