@@ -2156,7 +2156,7 @@ define(['N/log', 'N/file'],
                     <div class="search-bar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         <input type="text" placeholder="Search anything..." aria-label="Search dashboard" />
-            
+                        <span class="search-shortcut">&#8984; K</span>
                     </div>
                 </div>
                 <div class="topbar-right">
