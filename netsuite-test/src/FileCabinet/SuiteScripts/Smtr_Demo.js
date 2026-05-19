@@ -1291,30 +1291,18 @@ define(['N/log', 'N/file'],
             flex-direction: column;
         }
 
-        /* ---- MODAL ---- */
+        /* ---- REQUEST PAGE VIEW ---- */
         .request-modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(11, 18, 32, 0.55);
-            backdrop-filter: blur(4px);
             display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 2vh 2vw;
-            z-index: 9999;
+            width: 100%;
         }
-        .request-modal-overlay.open { display: flex; }
+        .request-modal-overlay.open { display: block; }
 
         .request-modal {
             width: 100%;
-            height: 100%;
-            max-width: 100%;
-            max-height: 100%;
-            overflow: auto;
             background: var(--c-bg);
             border-radius: var(--radius-lg);
-            box-shadow: 0 40px 100px rgba(11, 18, 32, 0.25);
-            padding: 2rem 2.25rem;
+            padding: 1rem 0;
         }
 
         .request-modal-header {
@@ -1862,7 +1850,7 @@ define(['N/log', 'N/file'],
                     </header>
                     <div class="request-stepper" style="display: inline-flex; align-items: center; gap: 0; background: transparent; padding: 0; margin-bottom: 2rem;">
                         <div class="step active" style="background: #0f172a; padding: 0.4rem 1.2rem; border-radius: 999px; position: relative; z-index: 2; border: 1px solid #0f172a;">
-                            <span style="background: #10b981; color: #fff;">1</span><p style="color: #ffffff;">Fill Details</p>
+                            <span style="background: #f59e0b; color: #fff;">1</span><p style="color: #ffffff;">Fill Details</p>
                         </div>
                         <div style="width: 40px; height: 1px; background: #cbd5e1; z-index: 1;"></div>
                         <div class="step" style="background: #ffffff; border: 1px solid #e2e8f0; padding: 0.4rem 1.2rem; border-radius: 999px; position: relative; z-index: 2;">
@@ -1877,7 +1865,7 @@ define(['N/log', 'N/file'],
                     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
                             <!-- SMTR Requestor Record View Details -->
-                            <div class="request-card" style="border-top: 4px solid #10b981;">
+                            <div class="request-card" style="border-top: 4px solid #f59e0b;">
                                 <div class="request-grid" style="margin-bottom: 1rem; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
                                     <label class="request-field">
                                         <span style="text-transform: uppercase; font-size: 0.7rem; font-weight: 700; color: #475569; letter-spacing: 0.05em;">Purpose of Request <span style="color: #ef4444;">*</span></span>
@@ -1929,12 +1917,12 @@ define(['N/log', 'N/file'],
                             </div>
 
                             <!-- Tips Before Submitting -->
-                            <div class="request-card" style="background: #f8fafc; border: 1px solid #d1fae5; border-radius: 12px; padding: 1.5rem;">
+                            <div class="request-card" style="background: #fdfbf7; border: 1px solid #fde68a; border-radius: 12px; padding: 1.5rem;">
                                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; flex-shrink: 0;">!</div>
+                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: #fef3c7; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; flex-shrink: 0;">!</div>
                                     <div>
-                                        <p style="font-weight: 700; color: #0f172a; margin: 0; font-size: 0.95rem;">Tips Before Submitting</p>
-                                        <p style="font-size: 0.8rem; color: #10b981; margin: 0; font-weight: 500;">Avoid common rejection reasons</p>
+                                        <p style="font-weight: 700; color: #0f172a; margin: 0; font-size: 0.95rem;">Premium PR Guidelines</p>
+                                        <p style="font-size: 0.8rem; color: #f59e0b; margin: 0; font-weight: 500;">Ensure fast processing</p>
                                     </div>
                                 </div>
                                
@@ -1942,22 +1930,15 @@ define(['N/log', 'N/file'],
                                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; gap: 0.8rem;">
                                         <div style="color: #f59e0b; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
                                         <div>
-                                            <p style="font-size: 0.8rem; font-weight: 700; color: #0f172a; margin: 0 0 0.2rem 0;">Be specific.</p>
-                                            <p style="font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.4;">Approvers prefer concrete deliverables and measurable outcomes.</p>
+                                            <p style="font-size: 0.8rem; font-weight: 700; color: #0f172a; margin: 0 0 0.2rem 0;">Verify GL Accounts.</p>
+                                            <p style="font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.4;">Correct accounting ensures budget alignment.</p>
                                         </div>
                                     </div>
                                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; gap: 0.8rem;">
                                         <div style="color: #f59e0b; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
                                         <div>
-                                            <p style="font-size: 0.8rem; font-weight: 700; color: #0f172a; margin: 0 0 0.2rem 0;">Mind the budget tier.</p>
-                                            <p style="font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.4;">Higher amounts are routed to senior approvers and take longer.</p>
-                                        </div>
-                                    </div>
-                                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; gap: 0.8rem;">
-                                        <div style="color: #f59e0b; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
-                                        <div>
-                                            <p style="font-size: 0.8rem; font-weight: 700; color: #0f172a; margin: 0 0 0.2rem 0;">Save often.</p>
-                                            <p style="font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.4;">Use "Save Draft" at any time — your work won't be lost.</p>
+                                            <p style="font-size: 0.8rem; font-weight: 700; color: #0f172a; margin: 0 0 0.2rem 0;">Check item quantities.</p>
+                                            <p style="font-size: 0.75rem; color: #64748b; margin: 0; line-height: 1.4;">Review on-hand vs requested amounts.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -2022,10 +2003,7 @@ define(['N/log', 'N/file'],
                                     </button>
 
                                     <div style="display: flex; gap: 1rem;">
-                                        <button type="button" id="btn-save-draft" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.2rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
-                                            Save Draft
-                                        </button>
-                                        <button type="button" id="btn-submit-request" style="background: #38b2ac; color: #ffffff; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                                        <button type="button" id="btn-submit-request" style="background: #f59e0b; color: #ffffff; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer;">
                                             Submit Request
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-left: 0.2rem;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                         </button>
@@ -2035,9 +2013,9 @@ define(['N/log', 'N/file'],
                         </div>
 
                         <!-- Submission Summary -->
-                        <div class="request-card" style="border-top: 4px solid #14b8a6; background: #f8fafc; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; padding: 1.5rem;">
+                        <div class="request-card" style="border-top: 4px solid #f59e0b; background: #fdfbf7; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; padding: 1.5rem;">
                             <div class="request-card-header" style="margin-bottom: 1.5rem;">
-                                <div class="request-card-number" style="background: #e0f2fe; color: #0ea5e9;">i</div>
+                                <div class="request-card-number" style="background: #fef3c7; color: #f59e0b;">i</div>
                                 <div>
                                     <p class="request-card-title">Submission Summary</p>
                                     <p class="request-card-subtitle">Live status of this record</p>
@@ -2383,24 +2361,18 @@ define(['N/log', 'N/file'],
 
         if (openBtn && modal) {
             openBtn.addEventListener('click', function() {
+                var dashboardView = document.getElementById('dashboard-view');
+                if (dashboardView) dashboardView.style.display = 'none';
                 modal.classList.add('open');
-                document.body.style.overflow = 'hidden';
+                window.scrollTo(0, 0);
             });
         }
 
         if (closeBtn && modal) {
             closeBtn.addEventListener('click', function() {
+                var dashboardView = document.getElementById('dashboard-view');
+                if (dashboardView) dashboardView.style.display = 'block';
                 modal.classList.remove('open');
-                document.body.style.overflow = '';
-            });
-        }
-
-        if (modal) {
-            modal.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    modal.classList.remove('open');
-                    document.body.style.overflow = '';
-                }
             });
         }
 
@@ -2434,16 +2406,7 @@ define(['N/log', 'N/file'],
             });
         }
 
-        if (btnSaveDraft) {
-            btnSaveDraft.addEventListener('click', function() {
-                var oldText = btnSaveDraft.innerText;
-                btnSaveDraft.innerText = 'Saving...';
-                setTimeout(function() {
-                    btnSaveDraft.innerText = 'Draft Saved!';
-                    setTimeout(function() { btnSaveDraft.innerText = oldText; }, 2000);
-                }, 800);
-            });
-        }
+
 
         if (btnSubmitRequest) {
             btnSubmitRequest.addEventListener('click', function() {
@@ -2452,8 +2415,9 @@ define(['N/log', 'N/file'],
                 setTimeout(function() {
                     alert('Request submitted successfully for approval.');
                     if (modal) {
+                        var dashboardView = document.getElementById('dashboard-view');
+                        if (dashboardView) dashboardView.style.display = 'block';
                         modal.classList.remove('open');
-                        document.body.style.overflow = '';
                     }
                     btnSubmitRequest.innerHTML = oldHtml;
                 }, 1000);
