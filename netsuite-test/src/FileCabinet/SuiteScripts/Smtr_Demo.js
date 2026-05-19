@@ -1728,9 +1728,13 @@ define(['N/log', 'N/file'],
         <aside class="sidebar">
             <div class="brand">TRACKNOW</div>
             <nav class="nav">
-                <div class="nav-item active">
-                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-                    Dashboard
+                <div class="nav-item active" id="nav-pr-list" data-page="pr-list">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    PR List
+                </div>
+                <div class="nav-item" id="nav-smtr-list" data-page="smtr-list">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                    SMTR List
                 </div>
                 <div class="nav-item">
                     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -1784,7 +1788,8 @@ define(['N/log', 'N/file'],
                 <!-- PAGE HEADER -->
                 <div class="page-header">
                     <div>
-                        <h1 class="page-title"><strong>TRACK</strong>now Requestor</h1>
+                        <h1 class="page-title"><strong>PR</strong> List</h1>
+                        <p class="page-subtitle" style="font-size: 0.8rem; color: #64748b; margin-top: 0.1rem;">Overview of your purchase requests and approvals</p>
                     </div>
                     <button class="btn-request-pr" id="btn-open-request">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -2555,6 +2560,27 @@ define(['N/log', 'N/file'],
         if (modal) {
             setupRemoveButtons();
         }
+
+        // Nav item switching (PR List / SMTR List)
+        var navPageItems = document.querySelectorAll('.nav-item[data-page]');
+        var pageTitleEl = document.querySelector('.page-title');
+        var pageSubEl = document.querySelector('.page-subtitle');
+
+        navPageItems.forEach(function(item) {
+            item.addEventListener('click', function() {
+                navPageItems.forEach(function(n) { n.classList.remove('active'); });
+                item.classList.add('active');
+
+                var page = item.getAttribute('data-page');
+                if (page === 'pr-list') {
+                    pageTitleEl.innerHTML = '<strong>PR</strong> List';
+                    if(pageSubEl) pageSubEl.textContent = 'Overview of your purchase requests and approvals';
+                } else if (page === 'smtr-list') {
+                    pageTitleEl.innerHTML = '<strong>SMTR</strong> List';
+                    if(pageSubEl) pageSubEl.textContent = 'Overview of your SMTR requests and records';
+                }
+            });
+        });
     })();
 </script>
 </body>
