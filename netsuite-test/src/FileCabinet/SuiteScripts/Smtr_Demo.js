@@ -1045,7 +1045,6 @@ define(['N/log', 'N/file'],
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TRACKnow Requestor Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -1264,8 +1263,7 @@ define(['N/log', 'N/file'],
             box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.04);
         }
 
-        .search-bar svg, .search-bar i {
-            font-size: 14px;
+        .search-bar svg {
             width: 14px;
             height: 14px;
             color: #94a3b8;
@@ -2123,13 +2121,9 @@ define(['N/log', 'N/file'],
         <aside class="sidebar">
             <div class="brand">TRACKNOW</div>
             <nav class="nav">
-                <div class="nav-item active" id="nav-pr-list" data-page="pr-list">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                    PR List
-                </div>
-                <div class="nav-item" id="nav-smtr-list" data-page="smtr-list">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-                    SMTR List
+                <div class="nav-item active">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                    Dashboard
                 </div>
                 <div class="nav-item">
                     <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -2160,9 +2154,9 @@ define(['N/log', 'N/file'],
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                     </button>
                     <div class="search-bar">
-                        <i class="bi bi-search"></i>
-                        <input type="text" id="search-input" placeholder="Search anything..." aria-label="Search dashboard" />
-                        <span class="search-shortcut">&#8984; K</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" placeholder="Search anything..." aria-label="Search dashboard" />
+            
                     </div>
                 </div>
                 <div class="topbar-right">
@@ -2182,7 +2176,7 @@ define(['N/log', 'N/file'],
                 <!-- PAGE HEADER -->
                 <div class="page-header">
                     <div>
-                        <h1 class="page-title"><strong>PR</strong> List</h1>
+                        <h1 class="page-title"><strong>TRACK</strong>now Requestor</h1>
                         <p class="page-subtitle">Overview of your purchase requests and approvals</p>
                     </div>
                     <button class="btn-request-pr" id="btn-open-request">
@@ -2669,52 +2663,6 @@ define(['N/log', 'N/file'],
         if (modal) {
             setupRemoveButtons();
         }
-
-        // Nav item switching (PR List / SMTR List)
-        var navPageItems = document.querySelectorAll('.nav-item[data-page]');
-        var pageTitleEl = document.querySelector('.page-title');
-        var pageSubEl = document.querySelector('.page-subtitle');
-
-        navPageItems.forEach(function(item) {
-            item.addEventListener('click', function() {
-                navPageItems.forEach(function(n) { n.classList.remove('active'); });
-                item.classList.add('active');
-
-                var page = item.getAttribute('data-page');
-                if (page === 'pr-list') {
-                    pageTitleEl.innerHTML = '<strong>PR</strong> List';
-                    pageSubEl.textContent = 'Overview of your purchase requests and approvals';
-                } else if (page === 'smtr-list') {
-                    pageTitleEl.innerHTML = '<strong>SMTR</strong> List';
-                    pageSubEl.textContent = 'Overview of your SMTR requests and records';
-                }
-            });
-        });
-        // Search functionality
-        var searchInput = document.getElementById('search-input');
-        var tableRows = document.querySelectorAll('.requests-table tbody tr');
-
-        if (searchInput) {
-            searchInput.addEventListener('input', function(e) {
-                var query = e.target.value.toLowerCase();
-                tableRows.forEach(function(row) {
-                    var rowText = row.textContent.toLowerCase();
-                    if (rowText.indexOf(query) !== -1) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            });
-
-            // Keyboard shortcut Cmd/Ctrl + K
-            document.addEventListener('keydown', function(e) {
-                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                    e.preventDefault();
-                    searchInput.focus();
-                }
-            });
-        }
     })();
 </script>
 </body>
@@ -2726,4 +2674,3 @@ define(['N/log', 'N/file'],
         };
     }
 );
-//-------//
