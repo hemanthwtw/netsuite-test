@@ -1045,6 +1045,7 @@ define(['N/log', 'N/file'],
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TRACKnow Requestor Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -1263,7 +1264,8 @@ define(['N/log', 'N/file'],
             box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.04);
         }
 
-        .search-bar svg {
+        .search-bar svg, .search-bar i {
+            font-size: 14px;
             width: 14px;
             height: 14px;
             color: #94a3b8;
@@ -2158,7 +2160,7 @@ define(['N/log', 'N/file'],
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                     </button>
                     <div class="search-bar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <i class="bi bi-search"></i>
                         <input type="text" id="search-input" placeholder="Search anything..." aria-label="Search dashboard" />
                         <span class="search-shortcut">&#8984; K</span>
                     </div>
