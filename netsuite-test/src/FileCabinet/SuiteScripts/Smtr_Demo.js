@@ -2159,7 +2159,7 @@ define(['N/log', 'N/file'],
                     </button>
                     <div class="search-bar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" placeholder="Search anything..." aria-label="Search dashboard" />
+                        <input type="text" id="search-input" placeholder="Search anything..." aria-label="Search dashboard" />
                         <span class="search-shortcut">&#8984; K</span>
                     </div>
                 </div>
@@ -2688,6 +2688,31 @@ define(['N/log', 'N/file'],
                 }
             });
         });
+        // Search functionality
+        var searchInput = document.getElementById('search-input');
+        var tableRows = document.querySelectorAll('.requests-table tbody tr');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                var query = e.target.value.toLowerCase();
+                tableRows.forEach(function(row) {
+                    var rowText = row.textContent.toLowerCase();
+                    if (rowText.indexOf(query) !== -1) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+
+            // Keyboard shortcut Cmd/Ctrl + K
+            document.addEventListener('keydown', function(e) {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+            });
+        }
     })();
 </script>
 </body>
