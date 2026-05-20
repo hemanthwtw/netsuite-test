@@ -552,7 +552,8 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                     .search-form .form-control { background-color: rgba(255,255,255,0.15); border: none; color: white; padding-left: 2.5rem; border-radius: 4px; }
                                     .search-form .form-control::placeholder { color: rgba(255,255,255,0.7); }
                                     .search-form .form-control:focus { background-color: rgba(255,255,255,0.25); box-shadow: none; color: white; }
-                                    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7); pointer-events: none; }
+                                    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7); cursor: pointer; }
+                                    .search-icon:hover { color: #ffffff; }
                                     .sidebar { position: fixed; top: var(--top-nav-height); bottom: 0; left: 0; width: var(--sidebar-width); background-color: var(--brand-teal); padding: 20px 15px; overflow-y: hidden; z-index: 1010; transition: transform 0.3s ease-in-out; }
                                     .nav-pills .nav-link { color: rgba(255,255,255,0.85); font-weight: 500; padding: 0.8rem 1rem; margin-bottom: 0.5rem; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; }
                                     .nav-pills .nav-link i { margin-right: 12px; font-size: 1.1rem; }
@@ -636,8 +637,8 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                         <h1 style="color: white; font-weight: bold; margin: 0;">TRACKNOW</h1>
                                     </div>
                                     <div class="search-container flex-grow-1 ms-2">
-                                        <form class="search-form position-relative" method="post">
-                                            <i class="bi bi-search search-icon"></i>
+                                        <form class="search-form position-relative" id="topbarSearchForm" method="post">
+                                            <i class="bi bi-search search-icon" onclick="document.getElementById('topbarSearchForm').submit();"></i>
                                             <input class="form-control" name="search" value="${context.request.parameters.search || ""}" type="text" placeholder="Search">
                                             <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail || ""}"/>
                                             <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated || ""}"/>
@@ -650,6 +651,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                             <input type="hidden" name="pageNumber" value="1"/>
                                         </form>
                                     </div>
+
                                     <div class="navbar-nav ms-auto align-items-center">
                                         <h2 class="text-light fw-bold mt-2 d-none d-sm-block">TRACKnow</h2>
                                     </div>
@@ -694,30 +696,134 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
 
                         // ─── SMTR LIST VIEW ──────────────────────────────────────────────────────────
                         if (activeDashboard === "SMTRList") {
+                            // ── Fetch true totals per status (independent of pagination) ──
+                            function _fetchSmtrTotal(statusFilterValue) {
+                                try {
+                                    var _opts = {
+                                        urlParams: {
+                                            vendorInternalId: context.request.parameters.vendorInternalId,
+                                            userAction: "getSMTRRecords",
+                                            pageNumber: 1,
+                                            vendorEmail: context.request.parameters.vendorEmail,
+                                            smtrStatusFilter: statusFilterValue,
+                                            urgencyLevelFilter: context.request.parameters.urgencyLevelFilter || "",
+                                            smtrUserRole: smtrUserRoleParam,
+                                            globalSearchValue: context.request.parameters.search || ""
+                                        },
+                                        method: "GET",
+                                        scriptId: "customscript_tm_rs_pr_po_getdata",
+                                        deploymentId: "customdeploy_tm_rs_pr_po_getdata"
+                                    };
+                                    var _res = https.requestRestlet(_opts);
+                                    var _obj = safeParseJSON(_res && _res.body);
+                                    if (_obj && (_obj.totalNumberOfRecords || _obj.totalNumberOfRecords === 0)) return Number(_obj.totalNumberOfRecords) || 0;
+                                    if (_obj && (_obj.totalRecords || _obj.totalRecords === 0)) return Number(_obj.totalRecords) || 0;
+                                    var _pages = (_obj && Number(_obj.totalNumberOfPages)) || 0;
+                                    var _arr = (_obj && _obj.smtrRecordsData) || [];
+                                    if (_pages > 0 && _arr.length > 0) return _pages * _arr.length;
+                                    return _arr.length;
+                                } catch (e) {
+                                    log.error("SMTR Count Fetch Error", "filter=" + statusFilterValue + " err=" + e);
+                                    return 0;
+                                }
+                            }
+
+                            var totalCount = _fetchSmtrTotal("");
+                            var pendingCount = _fetchSmtrTotal("1");
+                            var approvedCount = _fetchSmtrTotal("2");
+                            var fulfilledCount = _fetchSmtrTotal("5");
+
+                            var activeCardFilter = context.request.parameters.smtrStatusFilter || "";
+                            function _cardActive(val) { return activeCardFilter === val ? " active" : ""; }
+
                             dashboardPage += `<div class="container-fluid p-0">
                                 <div class="d-flex align-items-center gap-3 mb-4">
                                     <i class="bi bi-list menu-toggle-btn"></i>
                                     <h1 class="page-title m-0">TRACKnow SMTR Supervisor</h1>
                                 </div>
-                                <div class="row g-4 mb-4">
-                                    <div class="col-md-6">
-                                        <form class="card card-stats h-100 p-3 nav-card active callingmethod" role="button" method="post">
+                                <div class="row g-3 mb-4">
+                                    <div class="col-6 col-md-3">
+                                        <form class="card card-stats h-100 p-3 nav-card callingmethod${_cardActive("")}" role="button" method="post">
                                             <div class="d-flex justify-content-between align-items-center">
-                                                <div class="text-light">
+                                                <div>
                                                     <h6 class="card-title mb-2">SMTR List</h6>
-                                                    <div class="stats-number">310</div>
+                                                    <div class="stats-number">${totalCount}</div>
                                                 </div>
+                                                <i class="bi bi-file-earmark-text fs-3 opacity-75"></i>
                                             </div>
                                             <input type="hidden" name="dashboard" value="SMTRList"/>
+                                            <input type="hidden" name="smtrStatusFilter" value=""/>
                                             <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
                                             <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
                                             <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
                                             <input type="hidden" name="verified" value="true"/>
                                             <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
                                             <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+                                            <input type="hidden" name="search" value="${context.request.parameters.search || ""}"/>
+                                        </form>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <form class="card card-stats h-100 p-3 nav-card callingmethod${_cardActive("1")}" role="button" method="post">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="card-title mb-2">Pending Approval</h6>
+                                                    <div class="stats-number">${pendingCount}</div>
+                                                </div>
+                                                <i class="bi bi-hourglass-split fs-3 opacity-75"></i>
+                                            </div>
+                                            <input type="hidden" name="dashboard" value="SMTRList"/>
+                                            <input type="hidden" name="smtrStatusFilter" value="1"/>
+                                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+                                            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
+                                            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
+                                            <input type="hidden" name="verified" value="true"/>
+                                            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
+                                            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+                                            <input type="hidden" name="search" value="${context.request.parameters.search || ""}"/>
+                                        </form>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <form class="card card-stats h-100 p-3 nav-card callingmethod${_cardActive("2")}" role="button" method="post">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="card-title mb-2">Approved</h6>
+                                                    <div class="stats-number">${approvedCount}</div>
+                                                </div>
+                                                <i class="bi bi-check2-circle fs-3 opacity-75"></i>
+                                            </div>
+                                            <input type="hidden" name="dashboard" value="SMTRList"/>
+                                            <input type="hidden" name="smtrStatusFilter" value="2"/>
+                                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+                                            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
+                                            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
+                                            <input type="hidden" name="verified" value="true"/>
+                                            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
+                                            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+                                            <input type="hidden" name="search" value="${context.request.parameters.search || ""}"/>
+                                        </form>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <form class="card card-stats h-100 p-3 nav-card callingmethod${_cardActive("5")}" role="button" method="post">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="card-title mb-2">Fulfilled</h6>
+                                                    <div class="stats-number">${fulfilledCount}</div>
+                                                </div>
+                                                <i class="bi bi-truck fs-3 opacity-75"></i>
+                                            </div>
+                                            <input type="hidden" name="dashboard" value="SMTRList"/>
+                                            <input type="hidden" name="smtrStatusFilter" value="5"/>
+                                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+                                            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
+                                            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
+                                            <input type="hidden" name="verified" value="true"/>
+                                            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
+                                            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+                                            <input type="hidden" name="search" value="${context.request.parameters.search || ""}"/>
                                         </form>
                                     </div>
                                 </div>`;
+
 
                             if (context.request.parameters.approvalStatus === "Approved") {
                                 https.requestRestlet({
