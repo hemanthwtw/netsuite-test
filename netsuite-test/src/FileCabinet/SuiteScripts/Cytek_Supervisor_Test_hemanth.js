@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
@@ -182,7 +182,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                             </div>
                                             <h3 class="text-center mt-2 text-dark">SMTR Supervisor</h3>
                                             <div class="card-body px-4 pb-4 px-md-5 pb-md-5 bg-white">
-                                                <form method="post" action="/pr/supervisor">
+                                                <form method="post" action="">
                                                     <div class="mb-4">
                                                         <label for="vendorEmail" class="form-label fw-semibold text-muted">Email</label>
                                                         <input type="email" class="form-control form-control-lg rounded-3" id="vendorEmail" name="vendorEmail" placeholder="Enter mail" required>
@@ -281,7 +281,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                             </div>
                                             <h3 class="text-center mt-2">SMTR Supervisor</h3>
                                             <div class="card-body px-4 pb-4 px-md-5 pb-md-5 bg-white">
-                                                <form method="post" action="/pr/supervisor">
+                                                <form method="post" action="">
                                                     <div class="mb-4">
                                                         <h6 class="text-success">An OTP sent to <span class="fst-italic text-warning">${email}</span>.</h6>
                                                         <label for="authenticated" class="form-label fw-semibold text-muted">Verify OTP</label>
@@ -1163,7 +1163,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                         <h1 style="color: white; font-weight: bold; margin: 0;">TRACKNOW</h1>
                                     </div>
                                     <div class="search-container flex-grow-1 ms-2">
-                                        <form class="search-form position-relative" method="post" action="/pr/supervisor">
+                                        <form class="search-form position-relative" method="post" action="">
                                             <i class="bi bi-search search-icon"></i>
                                             <input class="form-control" name="search" value="${context.request.parameters.search || ""}" type="text" placeholder="Search">
                                             <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail || ""}"/>
@@ -1203,7 +1203,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                         </li>
                                     </ul>
                                     <hr class="text-white-50 my-3">
-                                    <form id="logoutForm" method="post" action="/pr/supervisor">
+                                    <form id="logoutForm" method="post" action="">
                                         <ul class="nav nav-pills flex-column">
                                             <li class="active">
                                                 <a href="#" id="logoutBtn" class="nav-link">
@@ -1242,7 +1242,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
 
                             if (prAccess && !smtrAccess) {
                                 dashboardPage += `<div class="col-md-6">
-                                <form class="card card-stats h-100 p-3 nav-card ${prActiveClass} callingmethod" role="button" method="post" action="/pr/supervisor?dashboard=PRRequestorList">
+                                <form class="card card-stats h-100 p-3 nav-card ${prActiveClass} callingmethod" role="button" method="post" action="">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div class="${prActiveText}">
                                             <h6 class="card-title mb-2">Purchase Requests</h6>
@@ -1261,7 +1261,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                             </div>`;
                             } else if (smtrAccess && !prAccess) {
                                 dashboardPage += `<div class="col-md-6">
-                                <form class="card card-stats h-100 p-3 nav-card ${smtrActiveClass} callingmethod" role="button" method="post" action="/pr/supervisor?dashboard=SMTRList">
+                                <form class="card card-stats h-100 p-3 nav-card ${smtrActiveClass} callingmethod" role="button" method="post" action="">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div class="${smtrActiveText}">
                                             <h6 class="card-title mb-2">SMTR List</h6>
@@ -1280,7 +1280,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                             </div>`;
                             } else {
                                 dashboardPage += `<div class="col-md-6">
-                                <form class="card card-stats h-100 p-3 nav-card ${prActiveClass} callingmethod" role="button" method="post" action="/pr/supervisor?dashboard=PRRequestorList">
+                                <form class="card card-stats h-100 p-3 nav-card ${prActiveClass} callingmethod" role="button" method="post" action="">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div class="${prActiveText}">
                                             <h6 class="card-title mb-2">Purchase Requests</h6>
@@ -1298,7 +1298,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                 </form>
                             </div>
                             <div class="col-md-6">
-                                <form class="card card-stats h-100 p-3 nav-card ${smtrActiveClass} callingmethod" role="button" method="post" action="/pr/supervisor?dashboard=SMTRList">
+                                <form class="card card-stats h-100 p-3 nav-card ${smtrActiveClass} callingmethod" role="button" method="post" action="">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div class="${smtrActiveText}">
                                             <h6 class="card-title mb-2">SMTR List</h6>
@@ -1555,7 +1555,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                                         <td>${transactionDataArray[index].urgencyLevel}</td>
                                                         <td>${transactionDataArray[index].status}</td>
                                                         <td>
-                                                            <form class="callingmethod" method="post" action="/pr/supervisor?SMTRID=${transactionDataArray[index].internalId}">
+                                                            <form class="callingmethod" method="post" action="">
                                                                 <i class="bi bi-arrow-right-circle-fill action-icon fs-4"></i>
                                                                 <input type="hidden" name="prAccess" value="${prAccess}"/>
                                                                 <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
@@ -1585,7 +1585,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                                     <td>${transactionDataArray[index].transactionNextApprover}</td>
                                                     <td>${transactionDataArray[index].transactionStatus}</td>
                                                     <td>
-                                                        <form class="callingmethod" method="post" action="/pr/supervisor?PRID=${transactionDataArray[index].transactionInternalId}" style="display:inline;">
+                                                        <form class="callingmethod" method="post" action="" style="display:inline;">
                                                             <i class="bi bi-arrow-right-circle-fill action-icon fs-4"></i>
                                                             <input type="hidden" name="prAccess" value="${prAccess}"/>
                                                             <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
@@ -1735,7 +1735,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                             <div class="d-flex justify-content-between detail-toolbar">
                                                 <div class="d-flex align-items-center gap-3 mb-4">
                                                     <i class="bi bi-list menu-toggle-btn"></i>
-                                                    <form class="callingmethod m-0" method="post" style="line-height: 0; display:inline;" action="/pr/supervisor?dashboard=${backDashboard}">
+                                                    <form class="callingmethod m-0" method="post" style="line-height: 0; display:inline;" action="">
                                                         <i class="bi bi-arrow-left-circle-fill text-orange fs-4" role="button"></i>
                                                         <input type="hidden" name="prAccess" value="${prAccess}"/>
                                                         <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
@@ -2268,3 +2268,4 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
         onRequest: onRequest
     };
 });
+
