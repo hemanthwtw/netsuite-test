@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
@@ -34,246 +34,1025 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
             return String(value || "") === String(expectedRole);
         }
 
-        var loginmobilecss = `
-            @media (max-width: 576px) {
-                .container-fluid {
-                    padding: 0 !important;
-                    align-items: center !important;
+        // ============================================================
+        //  SHARED AUTH (LOGIN / VERIFY) — Split-screen modern design
+        // ============================================================
+        var authSharedCSS = `
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            
+            :root {
+                --brand-primary: #0F2A47;
+                --brand-primary-dark: #0A1E34;
+                --brand-primary-soft: #1B3A60;
+                --brand-accent: #C9A24B;
+                --brand-accent-dark: #B08A36;
+                --brand-bg: #F4F6FA;
+                --brand-surface: #FFFFFF;
+                --brand-text: #1F2A37;
+                --brand-muted: #6B7280;
+                --brand-border: #E5E9F0;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            html, body {
+                margin: 0;
+                padding: 0;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            body {
+                font-family: 'Inter', system-ui, sans-serif;
+                min-height: 100vh;
+                background: #fff;
+                color: var(--brand-text);
+                overflow-x: hidden;
+            }
+
+            .login-root {
+                min-height: 100vh;
+                display: flex;
+                align-items: stretch;
+            }
+
+            /* LEFT PANEL */
+            .left-panel {
+                flex: 1;
+                min-width: 360px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 4rem 3rem;
+                background: linear-gradient(135deg, var(--brand-primary-dark) 0%, var(--brand-primary) 45%, var(--brand-primary-soft) 90%);
+                color: #ffffff;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .left-panel::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: radial-gradient(ellipse 650px 650px at 25% 25%, rgba(255,255,255,0.15) 0%, transparent 55%);
+                pointer-events: none;
+            }
+
+            .left-content {
+                position: relative;
+                z-index: 2;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: center;
+                gap: 1rem;
+                max-width: 420px;
+                width: 100%;
+            }
+
+            .brand-welcome {
+                font-size: 1rem;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                color: rgba(255, 255, 255, 0.72);
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+            }
+
+            .brand-title {
+                font-size: clamp(3.8rem, 5vw, 5.5rem);
+                line-height: 0.95;
+                font-weight: 800;
+                letter-spacing: -0.06em;
+                margin: 0;
+                color: #ffffff;
+            }
+
+            .brand-copy {
+                display: flex;
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .left-note {
+                font-size: 1rem;
+                color: rgba(255, 255, 255, 0.8);
+                line-height: 1.7;
+                max-width: 340px;
+            }
+
+            .shape-1,
+            .shape-2,
+            .shape-3 {
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.12);
+                pointer-events: none;
+            }
+
+            .shape-1 {
+                width: 260px;
+                height: 260px;
+                top: 10%;
+                right: 10%;
+                filter: blur(1px);
+                animation: moveShape1 10s ease-in-out infinite;
+            }
+
+            .shape-2 {
+                width: 200px;
+                height: 200px;
+                bottom: 15%;
+                left: 8%;
+                opacity: 0.55;
+                animation: moveShape2 12s ease-in-out infinite;
+            }
+
+            .shape-3 {
+                width: 140px;
+                height: 140px;
+                top: 50%;
+                right: 5%;
+                opacity: 0.36;
+                animation: moveShape3 14s ease-in-out infinite;
+            }
+
+            @keyframes moveShape1 {
+                0%, 100% { transform: translate(0, 0) scale(1); }
+                50% { transform: translate(-14px, 10px) scale(1.05); }
+            }
+
+            @keyframes moveShape2 {
+                0%, 100% { transform: translate(0, 0) scale(1); }
+                50% { transform: translate(18px, -14px) scale(0.96); }
+            }
+
+            @keyframes moveShape3 {
+                0%, 100% { transform: translate(0, 0) scale(1); }
+                50% { transform: translate(-12px, -16px) scale(1.04); }
+            }
+
+            /* RIGHT PANEL */
+            .right-panel {
+                flex: 1;
+                min-width: 360px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 3rem 2rem;
+                background: #f4f7fb;
+            }
+
+            .card {
+                width: 100%;
+                max-width: 420px;
+                background: #ffffff;
+                border-radius: 28px;
+                box-shadow: 0 34px 90px rgba(15, 23, 42, 0.12);
+                overflow: hidden;
+                border: 1px solid rgba(15, 23, 42, 0.06);
+            }
+
+            .card-header {
+                padding: 1.6rem 1.8rem;
+                background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-soft));
+                color: #ffffff;
+                font-size: 0.95rem;
+                font-weight: 700;
+                letter-spacing: 0.26em;
+                text-transform: uppercase;
+                text-align: center;
+            }
+
+            .card-body {
+                padding: 2rem 2rem 2.5rem;
+            }
+
+            .form-title {
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: var(--brand-primary);
+                margin-bottom: 0.6rem;
+                text-align: center;
+            }
+
+            .divider {
+                width: 52px;
+                height: 4px;
+                margin: 0 auto 1.8rem;
+                border-radius: 999px;
+                background: linear-gradient(135deg, var(--brand-accent-dark), var(--brand-accent));
+            }
+
+            .input-wrapper {
+                position: relative;
+            }
+
+            .field-input {
+                width: 100%;
+                padding: 1rem 1.1rem 1rem 3.6rem;
+                border: 2px solid var(--brand-border);
+                border-radius: 14px;
+                font-size: 1rem;
+                color: var(--brand-text);
+                background: #f8fafc;
+                outline: none;
+                transition: all 0.25s ease;
+            }
+
+            .input-icon {
+                position: absolute;
+                left: 1rem;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 20px;
+                height: 20px;
+                color: var(--brand-muted);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                pointer-events: none;
+            }
+
+            .right-panel::before {
+                content: '';
+                position: absolute;
+                top: -2px;
+                left: 0;
+                right: 0;
+                height: 200px;
+                background: radial-gradient(ellipse 800px 200px at center top, rgba(25, 118, 210, 0.08) 0%, transparent 70%);
+                pointer-events: none;
+            }
+
+            .form-container {
+                width: 100%;
+                max-width: 400px;
+                position: relative;
+                z-index: 1;
+                display: none;
+            }
+
+            .form-container.is-active {
+                display: block;
+            }
+
+            .fade-in {
+                animation: fadeSlideIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+            }
+
+            @keyframes fadeSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(24px);
                 }
-                .row {
-                    flex-direction: column !important;
-                    align-items: center !important;
-                    width: 100% !important;
-                    margin: 0 !important;
-                }
-                .col-12.col-md-5 {
-                    text-align: center !important;
-                    padding: 80px 16px 20px !important;
-                    margin: 0 !important;
-                    width: 100% !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                }
-                .col-12.col-md-5 h2 {
-                    font-size: 19px !important;
-                    text-align: center !important;
-                    color: #666 !important;
-                    font-weight: 700 !important;
-                    margin-bottom: 6px !important;
-                    letter-spacing: 0.2px !important;
-                }
-                .col-12.col-md-5 img {
-                    max-width: 320px !important;
-                    width: 88% !important;
-                }
-                .col-12.col-sm-10.col-md-6.col-xl-4 {
-                    width: 100% !important;
-                    padding: 0 16px 60px !important;
-                    margin: 0 !important;
-                }
-                .card {
-                    border-radius: 16px !important;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.12) !important;
-                    overflow: hidden !important;
-                }
-                .card-header {
-                    padding: 30px 20px !important;
-                    border-radius: 0 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    text-align: center !important;
-                }
-                .card-header img {
-                    max-width: 240px !important;
-                    width: 80% !important;
-                    height: auto !important;
-                    display: block !important;
-                    margin: 0 auto !important;
-                }
-                .card-body {
-                    padding: 24px 24px 32px !important;
-                }
-                .form-control {
-                    font-size: 15px !important;
-                    padding: 13px 16px !important;
-                    border-radius: 10px !important;
-                    border: 1.5px solid #ddd !important;
-                    -webkit-appearance: none;
-                }
-                .btn-brand-orange {
-                    display: block !important;
-                    width: 58% !important;
-                    margin: 8px auto 0 !important;
-                    padding: 14px !important;
-                    font-size: 15px !important;
-                    font-weight: 700 !important;
-                    border-radius: 30px !important;
-                    text-align: center !important;
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
                 }
             }
-            `;
+
+            .form-header {
+                text-align: center;
+                margin-bottom: 2.2rem;
+            }
+
+            .form-subtitle {
+                font-size: 0.95rem;
+                color: var(--brand-muted);
+                line-height: 1.6;
+            }
+
+            .form-subtitle strong {
+                color: var(--brand-accent-dark);
+                font-weight: 600;
+            }
+
+            /* FIELDS */
+            .field-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.6rem;
+                margin-bottom: 1.8rem;
+            }
+
+            .field-label {
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--brand-primary);
+                letter-spacing: 0.02em;
+                text-transform: uppercase;
+                text-align: left;
+            }
+
+            .field-input {
+                width: 100%;
+                padding: 1rem 1.1rem;
+                border: 2px solid var(--brand-border);
+                border-radius: 14px;
+                font-size: 0.96rem;
+                color: var(--brand-text);
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(8px);
+                outline: none;
+                transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+                position: relative;
+                z-index: 1;
+            }
+
+            .field-input::placeholder {
+                color: #cbd5e1;
+            }
+
+            .field-input:focus {
+                border-color: var(--brand-accent);
+                background: rgba(255, 255, 255, 0.95);
+                box-shadow: 0 0 0 5px rgba(201, 162, 75, 0.12);
+                transform: translateY(-1px);
+            }
+
+            .field-input.field-input--error {
+                border-color: #ef4444;
+                box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+            }
+
+            .input-bg {
+                position: absolute;
+                inset: 0;
+                border-radius: 14px;
+                background: linear-gradient(135deg, rgba(201, 162, 75, 0.08), rgba(201, 162, 75, 0.04));
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .field-input:focus ~ .input-bg {
+                opacity: 1;
+            }
+
+            .field-error {
+                font-size: 0.8rem;
+                color: #ef4444;
+                font-weight: 600;
+                margin-top: 0.2rem;
+                animation: slideDown 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+                text-align: left;
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* BUTTON */
+            .btn-primary {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.65rem;
+                padding: 1rem 1.4rem;
+                background: linear-gradient(135deg, var(--brand-accent), var(--brand-accent-dark));
+                border: 2px solid transparent;
+                border-radius: 14px;
+                color: #fff;
+                font-size: 0.97rem;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .btn-primary::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                transition: left 0.5s ease;
+            }
+
+            .btn-primary:hover:not(.loading) {
+                transform: translateY(-3px);
+                box-shadow: 0 12px 32px rgba(201, 162, 75, 0.32), 0 0 0 4px rgba(201, 162, 75, 0.12);
+            }
+
+            .btn-primary:hover:not(.loading)::before {
+                left: 100%;
+            }
+
+            .btn-primary:active:not(.loading) {
+                transform: translateY(-1px);
+            }
+
+            .btn-primary.loading {
+                background: linear-gradient(135deg, var(--brand-accent-dark), var(--brand-accent));
+                cursor: not-allowed;
+            }
+
+            .btn-icon {
+                transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+
+            .btn-primary:hover:not(.loading) .btn-icon {
+                transform: translateX(4px);
+            }
+
+            .spinner {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                border: 2.5px solid rgba(255, 255, 255, 0.3);
+                border-top-color: #fff;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin-right: 0.5rem;
+            }
+
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+
+            /* OTP */
+            .otp-icon {
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, rgba(201, 162, 75, 0.15), rgba(201, 162, 75, 0.08));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--brand-accent);
+                margin: 0 auto 1.2rem;
+                animation: scaleIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+
+            @keyframes scaleIn {
+                from {
+                    opacity: 0;
+                    transform: scale(0.5);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+
+            .otp-group {
+                display: flex;
+                gap: 0.75rem;
+                margin-bottom: 1.8rem;
+                justify-content: center;
+            }
+
+            .otp-wrapper {
+                position: relative;
+            }
+
+            .otp-input {
+                width: 68px;
+                height: 68px;
+                text-align: center;
+                font-size: 1.6rem;
+                font-weight: 700;
+                color: var(--brand-text);
+                border: 2px solid var(--brand-border);
+                border-radius: 14px;
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(8px);
+                outline: none;
+                transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+                caret-color: var(--brand-accent);
+            }
+
+            .otp-input:focus {
+                border-color: var(--brand-accent);
+                background: #fff;
+                box-shadow: 0 0 0 5px rgba(201, 162, 75, 0.12), 0 8px 20px rgba(201, 162, 75, 0.15);
+                transform: scale(1.08) translateY(-2px);
+            }
+
+            .otp-input.otp-input--filled {
+                border-color: var(--brand-accent);
+                background: linear-gradient(135deg, #fffbf0 0%, #fdfbf7 100%);
+                color: var(--brand-accent);
+                font-weight: 800;
+                animation: popIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+
+            @keyframes popIn {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.7);
+                }
+                60% {
+                    transform: scale(1.12);
+                }
+                100% {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+
+            .verifying-text {
+                text-align: center;
+                font-size: 0.85rem;
+                color: var(--brand-accent);
+                font-weight: 600;
+                animation: fadeIn 0.3s ease;
+                margin-bottom: 1rem;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            /* RESEND */
+            .resend-text {
+                font-size: 0.88rem;
+                color: var(--brand-muted);
+                text-align: center;
+                margin-top: 0.5rem;
+            }
+
+            .resend-btn {
+                background: none;
+                border: none;
+                color: var(--brand-accent);
+                font-size: 0.88rem;
+                font-weight: 700;
+                cursor: pointer;
+                padding: 0;
+                text-decoration: none;
+                transition: all 0.2s ease;
+                position: relative;
+            }
+
+            .resend-btn::after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: var(--brand-accent);
+                transform: scaleX(0);
+                transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+
+            .resend-btn:hover::after {
+                transform: scaleX(1);
+            }
+
+            /* BACK BUTTON */
+            .back-btn {
+                background: none;
+                border: none;
+                color: var(--brand-muted);
+                font-size: 0.87rem;
+                font-weight: 600;
+                cursor: pointer;
+                padding: 0.6rem 0;
+                margin-bottom: 1.5rem;
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            .back-btn:hover {
+                color: var(--brand-accent);
+                transform: translateX(-2px);
+            }
+
+            /* VERIFIED */
+            .verified-container {
+                text-align: center;
+            }
+
+            .success-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #d1fae5 0%, #c7f0d8 100%);
+                color: #059669;
+                margin-bottom: 1.5rem;
+                animation: celebrateScale 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+
+            @keyframes celebrateScale {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.3) rotate(-30deg);
+                }
+                60% {
+                    transform: scale(1.15) rotate(5deg);
+                }
+                100% {
+                    opacity: 1;
+                    transform: scale(1) rotate(0deg);
+                }
+            }
+
+            .success-title {
+                color: #059669;
+                margin-bottom: 0.5rem;
+            }
+
+            .success-sub {
+                color: var(--brand-muted);
+                margin-bottom: 1.5rem;
+            }
+
+            .progress-bar {
+                width: 100%;
+                height: 3px;
+                background: var(--brand-border);
+                border-radius: 2px;
+                overflow: hidden;
+            }
+
+            .progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, var(--brand-accent), var(--brand-accent-dark));
+                animation: progressFill 2s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+
+            @keyframes progressFill {
+                from { width: 0; }
+                to { width: 100%; }
+            }
+
+            .footer-text {
+                font-size: 0.8rem;
+                color: #94a3b8;
+                text-align: center;
+                margin-top: 1.5rem;
+                letter-spacing: 0.02em;
+            }
+
+            /* ERROR MODAL */
+            .error-modal-backdrop {
+                position: fixed; inset: 0;
+                background: rgba(15,42,71,0.55);
+                z-index: 9999; display: flex; align-items: center; justify-content: center;
+            }
+            .error-modal {
+                background: #fff; border-radius: 14px; overflow: hidden;
+                width: 92%; max-width: 380px;
+                box-shadow: 0 30px 60px -20px rgba(15,42,71,0.35);
+            }
+            .error-modal .em-head {
+                background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-soft));
+                color: #fff; padding: 14px 20px; font-weight: 600; letter-spacing: 0.4px;
+            }
+            .error-modal .em-body {
+                padding: 22px; text-align: center;
+            }
+            .error-modal .em-body .em-icon {
+                color: #DC3545; font-size: 40px; margin-bottom: 10px;
+            }
+            .error-modal .em-body p {
+                margin: 6px 0 0; color: var(--brand-text); font-weight: 500;
+            }
+            .error-modal .em-foot {
+                display: flex; justify-content: center; padding: 0 22px 22px;
+            }
+            .error-modal .em-foot button {
+                background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-soft));
+                color: #fff; border: none; border-radius: 999px;
+                padding: 9px 22px; font-weight: 600; cursor: pointer;
+            }
+
+            /* RESPONSIVE */
+            @media (max-width: 1024px) {
+                .left-panel { padding: 2rem; }
+                .right-panel { width: 460px; }
+            }
+
+            @media (max-width: 768px) {
+                .login-root { flex-direction: column; }
+                .left-panel {
+                    width: 100%;
+                    padding: 2rem;
+                    min-height: 200px;
+                }
+                .right-panel {
+                    width: 100%;
+                    padding: 2.5rem 1.5rem;
+                    min-height: 500px;
+                }
+                .brand-title { font-size: clamp(2rem, 4vw, 3rem); }
+                .shape-1 { width: 200px; height: 200px; }
+                .shape-2 { width: 130px; height: 130px; }
+                .shape-3 { width: 100px; height: 100px; }
+                .form-title { font-size: 1.5rem; }
+            }
+        `;
 
         var loginPage = () => {
             return `<!DOCTYPE html>
-                        <html lang="en">                          
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>TrackNow Login</title>
-                            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-                            <style>
-                                body {
-                                    background-color: #F0F2F5;
-                                    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-                                }
-                                .bg-brand-teal { background-color: #35858B; }
-                                .btn-brand-orange { background-color: #F29D38; color: white; }
-                                .btn-brand-orange:hover { background-color: #d68b31; color: white; }
-                                .form-control { background-color: #f8f9fa; border: 1px solid #e9ecef; }
-                                .form-control:focus {
-                                    background-color: #fff;
-                                    border-color: #35858B;
-                                    box-shadow: 0 0 0 0.25rem rgba(53, 133, 139, 0.25);
-                                }
-                                ${loginmobilecss}
-                            </style>
-                        </head>
-                        <body>
-                            <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-5">
-                                <div class="row w-100 justify-content-center align-items-center">
-                                    <div class="col-12 col-md-5 text-center text-md-start mb-4 mb-md-0 ps-xl-4 ms-0">
-                                        <h2 class="fw-bold text-secondary mb-3">Welcome to</h2>
-                                        <img src="https://i.postimg.cc/HWtXzb6H/1-1-removebg-preview.png" alt="TRACKnow" class="img-fluid" style="max-width: 280px; width: 100%;" />
-                                    </div>
-                                    <div class="col-12 col-sm-10 col-md-6 col-xl-4">
-                                        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                                            <div class="card-header bg-brand-teal text-center p-4 border-0">
-                                                <h1 style="color: white; font-weight: bold; margin: 0;">TRACKNOW</h1>
-                                            </div>
-                                            <h3 class="text-center mt-2 text-dark">SMTR Supervisor</h3>
-                                            <div class="card-body px-4 pb-4 px-md-5 pb-md-5 bg-white">
-                                                <form method="post">
-                                                    <div class="mb-4">
-                                                        <label for="vendorEmail" class="form-label fw-semibold text-muted">Email</label>
-                                                        <input type="email" class="form-control form-control-lg rounded-3" id="vendorEmail" name="vendorEmail" placeholder="Enter mail" required>
-                                                    </div>
-                                                    <div class="text-center gap-2">
-                                                        <button type="submit" class="btn btn-brand-orange btn-lg rounded-pill fw-bold shadow-sm w-50" name="get_otp" value="get_otp">Get OTP</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TRACKnow — Sign in</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>${authSharedCSS}</style>
+</head>
+<body>
+    <div class="login-root">
+        <div class="left-panel">
+            <div class="left-content">
+                <div class="brand-copy">
+                    <span class="brand-welcome">Welcome to</span>
+                    <h1 class="brand-title">TRACKNOW</h1>
+                </div>
+                <p class="left-note">Secure access for SMTR Supervisors with streamlined OTP authentication.</p>
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="card">
+                <div class="card-header">TRACKNOW</div>
+                <div class="card-body">
+                    <form id="login-form" method="POST" novalidate>
+                        <div class="form-container fade-in is-active" id="step-email">
+                            <div class="form-header">
+                                <h1 class="form-title">SMTR Supervisor</h1>
+                                <div class="divider"></div>
+                                <p class="form-subtitle">Enter your email to receive your one-time passcode.</p>
                             </div>
-                            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-                            <script>
-                                document.addEventListener("DOMContentLoaded", function() {
-                                    const loginForm = document.querySelector("form");
-                                    loginForm.addEventListener("submit", function() {
-                                        localStorage.setItem("tracknow_smtr_logged_in", "true");
-                                    });
-                                });
-                            </script>
-                        </body>
-                        </html>`;
+
+                            <div class="field-group">
+                                <label for="vendorEmail" class="field-label">Email</label>
+                                <div class="input-wrapper">
+                                    <span class="input-icon" aria-hidden="true">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M4 4h16v16H4z"></path>
+                                            <polyline points="22,6 12,13 2,6"></polyline>
+                                        </svg>
+                                    </span>
+                                    <input
+                                        id="vendorEmail"
+                                        name="vendorEmail"
+                                        type="email"
+                                        class="field-input"
+                                        placeholder="Enter your email"
+                                        autocomplete="email"
+                                        autofocus
+                                        required
+                                    />
+                                </div>
+                                <span class="field-error" id="email-error" style="display: none;"></span>
+                            </div>
+
+                            <button type="submit" class="btn-primary" name="get_otp" value="get_otp" id="btn-continue">
+                                <span>Get OTP</span>
+                                <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const loginForm = document.querySelector("#login-form");
+            loginForm.addEventListener("submit", function() {
+                localStorage.setItem("tracknow_smtr_logged_in", "true");
+            });
+        });
+    </script>
+</body>
+</html>`;
         };
 
         var verifyPage = (requestorId, email, smtrAccess, smtrSupervisorRoleAcess, errorMessage = "") => {
             var modalHtml = errorMessage
-                ? `
-            <div class="modal fade" id="otpErrorModal" tabindex="-1" aria-labelledby="otpErrorModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered" style="max-width: 360px;">
-                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                        <div class="modal-header border-0 pb-0" style="background-color: #35858B;">
-                            <h6 class="modal-title text-white fw-semibold" id="otpErrorModalLabel">
-                                <i class="bi bi-shield-exclamation me-2"></i>Verification Failed
-                            </h6>
+                ? `<div class="error-modal-backdrop" id="otpErrorModal">
+                        <div class="error-modal">
+                            <div class="em-head"><i class="bi bi-shield-exclamation"></i>&nbsp; Verification Failed</div>
+                            <div class="em-body">
+                                <div class="em-icon"><i class="bi bi-x-circle-fill"></i></div>
+                                <p>${errorMessage}</p>
+                            </div>
+                            <div class="em-foot">
+                                <button type="button" onclick="document.getElementById('otpErrorModal').remove()">OK</button>
+                            </div>
                         </div>
-                        <div class="modal-body pt-3 pb-2 text-center">
-                            <i class="bi bi-x-circle-fill text-danger mb-2" style="font-size: 2.5rem;"></i>
-                            <p class="fw-semibold text-secondary mt-2 mb-0">${errorMessage}</p>
-                        </div>
-                        <div class="modal-footer border-0 pt-1 justify-content-center">
-                            <button type="button" class="btn btn-brand-orange rounded-pill px-4 fw-bold" data-bs-dismiss="modal">OK</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                    var errorModal = new bootstrap.Modal(document.getElementById("otpErrorModal"), { backdrop: true });
-                    errorModal.show();
-                });
-            </script>`
+                   </div>`
                 : "";
 
             return `<!DOCTYPE html>
-                        <html lang="en">                          
-                        <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>TrackNow Login</title>
-                            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-                            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-                            <style>
-                                body { background-color: #F0F2F5; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
-                                .bg-brand-teal { background-color: #35858B; }
-                                .btn-brand-orange { background-color: #F29D38; color: white; }
-                                .btn-brand-orange:hover { background-color: #d68b31; color: white; }
-                                .form-control { background-color: #f8f9fa; border: 1px solid #e9ecef; }
-                                .form-control:focus { background-color: #fff; border-color: #35858B; box-shadow: 0 0 0 0.25rem rgba(53, 133, 139, 0.25); }
-                                ${loginmobilecss}
-                            </style>
-                        </head>
-                        <body>
-                            ${modalHtml}
-                            <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-5">
-                                <div class="row w-100 justify-content-center align-items-center">
-                                    <div class="col-12 col-md-5 text-center text-md-start mb-4 mb-md-0 ps-xl-4 ms-0">
-                                        <h2 class="fw-bold text-secondary mb-3">Welcome to</h2>
-                                        <img src="https://i.postimg.cc/HWtXzb6H/1-1-removebg-preview.png" alt="TRACKnow" class="img-fluid" style="max-width: 280px; width: 100%;" />
-                                    </div>
-                                    <div class="col-12 col-sm-10 col-md-6 col-xl-4">
-                                        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                                            <div class="card-header bg-brand-teal text-center p-4 border-0">
-                                                <h1 style="color: white; font-weight: bold; margin: 0;">TRACKNOW</h1>
-                                            </div>
-                                            <h3 class="text-center mt-2">SMTR Supervisor</h3>
-                                            <div class="card-body px-4 pb-4 px-md-5 pb-md-5 bg-white">
-                                                <form method="post">
-                                                    <div class="mb-4">
-                                                        <h6 class="text-success">An OTP sent to <span class="fst-italic text-warning">${email}</span>.</h6>
-                                                        <label for="authenticated" class="form-label fw-semibold text-muted">Verify OTP</label>
-                                                        <input type="hidden" name="employeeInternalId" value="${requestorId}"/>
-                                                        <input type="hidden" name="vendorEmail" value="${email}"/>
-                                                        <input type="hidden" name="smtrSupervisorRoleAcess" value="${smtrSupervisorRoleAcess}"/>
-                                                        <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
-                                                        <input type="password" class="form-control form-control-lg rounded-3" id="authenticated" name="authenticated" placeholder="Enter OTP" maxlength="4" pattern="[0-9]{4}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4)" required>
-                                                    </div>
-                                                    <div class="text-center gap-2">
-                                                        <button type="submit" class="btn btn-brand-orange btn-lg rounded-pill fw-bold shadow-sm w-50" name="verify_otp" value="verify_otp">Verify OTP</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>                  
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TRACKnow — Verify OTP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>${authSharedCSS}</style>
+</head>
+<body>
+    ${modalHtml}
+    <div class="login-root">
+        <div class="left-panel">
+            <div class="left-content">
+                <div class="brand-copy">
+                    <span class="brand-welcome">Welcome to</span>
+                    <h1 class="brand-title">TRACKNOW</h1>
+                </div>
+                <p class="left-note">Secure access for SMTR Supervisors with streamlined OTP authentication.</p>
+                <div class="shape shape-1"></div>
+                <div class="shape shape-2"></div>
+                <div class="shape shape-3"></div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="card">
+                <div class="card-header">TRACKNOW</div>
+                <div class="card-body">
+                    <form id="verify-form" method="POST" novalidate>
+                       
+                        
+                        <div class="form-container fade-in is-active" id="step-otp">
+                            <div class="form-header">
+                                <div class="otp-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                    </svg>
+                                </div>
+                                <h1 class="form-title">SMTR Supervisor</h1>
+                                <div class="divider"></div>
+                                <p class="form-subtitle">Enter the 4-digit code sent to<br /><strong id="otp-email-display">${email || 'your email'}</strong></p>
+                            </div>
+
+                            <input type="hidden" name="employeeInternalId" value="${requestorId}"/>
+                            <input type="hidden" name="vendorEmail" value="${email}"/>
+                            <input type="hidden" name="smtrSupervisorRoleAcess" value="${smtrSupervisorRoleAcess}"/>
+                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+
+                            <div class="otp-group" id="otp-group-element">
+                                <div class="otp-wrapper">
+                                    <input class="otp-input" id="otp-1" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" autocomplete="one-time-code" />
+                                </div>
+                                <div class="otp-wrapper">
+                                    <input class="otp-input" id="otp-2" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" />
+                                </div>
+                                <div class="otp-wrapper">
+                                    <input class="otp-input" id="otp-3" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" />
+                                </div>
+                                <div class="otp-wrapper">
+                                    <input class="otp-input" id="otp-4" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" />
                                 </div>
                             </div>
-                            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-                            <script>
-                                document.addEventListener("DOMContentLoaded", function() {
-                                    const loginForm = document.querySelector("form");
-                                    loginForm.addEventListener("submit", function() {
-                                        localStorage.setItem("tracknow_smtr_logged_in", "true");
-                                    });
-                                });
-                            </script>
-                        </body>
-                        </html>`;
+
+                            <div class="verifying-text" id="verifying-indicator" style="display: none;">Verifying...</div>
+
+                            <button type="submit" class="btn-primary" id="btn-verify" name="verify_otp" value="verify_otp">
+                                <span>Verify OTP</span>
+                                <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+
+                            <p class="resend-text">
+                                Didn't receive the code?
+                                <button type="button" class="resend-btn" id="btn-resend">Resend</button>
+                            </p>
+                        </div>
+
+                        <div class="form-container fade-in verified-container" id="step-verified">
+                            <div class="success-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                            <h1 class="form-title success-title">Authentication successful</h1>
+                            <p class="form-subtitle success-sub">Welcome to TRACKnow. Redirecting you now...</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const form = document.querySelector("#verify-form");
+            const otpInputs = document.querySelectorAll('.otp-input');
+            const authenticatedInput = document.createElement('input');
+            authenticatedInput.type = 'hidden';
+            authenticatedInput.name = 'authenticated';
+            form.appendChild(authenticatedInput);
+
+            // Handle OTP input navigation
+            otpInputs.forEach((input, index) => {
+                input.addEventListener('input', function() {
+                    if (this.value && index < otpInputs.length - 1) {
+                        otpInputs[index + 1].focus();
+                    }
+                    
+                    if (this.value) {
+                        this.classList.add('otp-input--filled');
+                    } else {
+                        this.classList.remove('otp-input--filled');
+                    }
+                    
+                    const otp = Array.from(otpInputs).map(input => input.value).join('');
+                    authenticatedInput.value = otp;
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !this.value && index > 0) {
+                        otpInputs[index - 1].focus();
+                    }
+                });
+            });
+
+           form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const otp = Array.from(otpInputs).map(input => input.value).join('');
+                if (otp.length === 4) {
+                    localStorage.setItem("tracknow_smtr_logged_in", "true");
+                    
+                    // Add loading state to the button instead of hiding the form
+                    const verifyBtn = document.getElementById('btn-verify');
+                    verifyBtn.classList.add('loading');
+                    verifyBtn.innerHTML = '<span class="spinner"></span><span>Verifying...</span>';
+                    verifyBtn.style.pointerEvents = 'none'; // Prevent double-clicks
+                    
+                    // Add verify_otp parameter before submission
+                    const verifyOtpInput = document.createElement('input');
+                    verifyOtpInput.type = 'hidden';
+                    verifyOtpInput.name = 'verify_otp';
+                    verifyOtpInput.value = 'verify_otp';
+                    form.appendChild(verifyOtpInput);
+                    
+                    form.submit();
+                }
+            });
+
+            const backBtn = document.querySelector("#btn-back");
+            if (backBtn) {
+                backBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const empId = document.querySelector('input[name="employeeInternalId"]').value;
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.innerHTML = '<input type="hidden" name="logout" value="true" /><input type="hidden" name="employeeInternalId" value="' + empId + '" />';
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            }
+
+            const resendBtn = document.querySelector("#btn-resend");
+            if (resendBtn) {
+                resendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const empId = document.querySelector('input[name="employeeInternalId"]').value;
+                    const vendorEmail = document.querySelector('input[name="vendorEmail"]').value;
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.innerHTML = '<input type="hidden" name="get_otp" value="get_otp" /><input type="hidden" name="vendorEmail" value="' + vendorEmail + '" /><input type="hidden" name="employeeInternalId" value="' + empId + '" />';
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            }
+        });
+    </script>
+</body>
+</html>`;
         };
 
         if (context.request.method === "GET") {
@@ -517,314 +1296,556 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
 
                         var smtrUserRoleParam =
                             context.request.parameters.smtrUserRole &&
-                            context.request.parameters.smtrUserRole !== "undefined"
+                                context.request.parameters.smtrUserRole !== "undefined"
                                 ? context.request.parameters.smtrUserRole
                                 : smtrUserRole || "";
 
+                        // ============================================================
+                        //  DASHBOARD — Modern light theme with sidebar + stat cards
+                        // ============================================================
                         var dashboardPage = `<!DOCTYPE html>
-                            <html lang="en">                            
-                            <head>
-                            <script>
-                            if (localStorage.getItem("tracknow_smtr_logged_in") !== "true") {
-                                window.location.replace("/smtr/supervisor");
-                            }
-                            <\/script>
-                                <meta charset="UTF-8">
-                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                <title>TRACKnow SMTR Dashboard</title>
-                                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-                                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-                                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-                                <style>
-                                    :root {
-                                        --brand-teal: #35858B;
-                                        --brand-teal-dark: #2a6a70;
-                                        --brand-orange: #F29D38;
-                                        --brand-bg-light: #F0F2F5;
-                                        --brand-text-dark: #343a40;
-                                        --sidebar-width: 250px;
-                                        --top-nav-height: 60px;
-                                        --mobile-top-nav-height: 110px;
-                                    }
-                                    body { background-color: var(--brand-bg-light); font-family: 'Inter', 'Segoe UI', sans-serif; color: var(--brand-text-dark); overflow-x: hidden; }
-                                    .navbar-top { height: var(--top-nav-height); background-color: var(--brand-teal); box-shadow: 0 2px 4px rgba(0,0,0,0.08); z-index: 1020; }
-                                    .search-container .search-form { width: 50%; }
-                                    .search-form .form-control { background-color: rgba(255,255,255,0.15); border: none; color: white; padding-left: 2.5rem; border-radius: 4px; }
-                                    .search-form .form-control::placeholder { color: rgba(255,255,255,0.7); }
-                                    .search-form .form-control:focus { background-color: rgba(255,255,255,0.25); box-shadow: none; color: white; }
-                                    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7); cursor: pointer; }
-                                    .search-icon:hover { color: #ffffff; }
-                                    .sidebar { position: fixed; top: var(--top-nav-height); bottom: 0; left: 0; width: var(--sidebar-width); background-color: var(--brand-teal); padding: 20px 15px; overflow-y: hidden; z-index: 1010; transition: transform 0.3s ease-in-out; }
-                                    .nav-pills .nav-link { color: rgba(255,255,255,0.85); font-weight: 500; padding: 0.8rem 1rem; margin-bottom: 0.5rem; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; }
-                                    .nav-pills .nav-link i { margin-right: 12px; font-size: 1.1rem; }
-                                    .nav-pills .nav-link:hover { color: white; background-color: rgba(255,255,255,0.1); }
-                                    .nav-pills .nav-link.active { color: var(--brand-orange); background-color: transparent; }
-                                    .nav-card.active { color: var(--brand-teal); background-color: var(--brand-orange); }
-                                    .main-content { margin-top: var(--top-nav-height); margin-left: var(--sidebar-width); transition: margin-left 0.3s ease-in-out; }
-                                    .page-title { font-weight: 600; font-size: 1.5rem; margin-bottom: 25px; }
-                                    .card-stats { border: none; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); transition: transform 0.2s ease-in-out; }
-                                    .card-stats:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.06); }
-                                    .card-stats .card-title { font-size: 0.95rem; font-weight: 500; }
-                                    .card-stats .stats-number { font-size: 2rem; font-weight: 700; line-height: 1.2; }
-                                    .text-teal { color: var(--brand-teal); }
-                                    .text-orange { color: var(--brand-orange); }
-                                    .card-table { border: none; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); overflow: hidden; margin-bottom: 150px; }
-                                    .card-table .card-header { background-color: white; border-bottom: 1px solid #edf2f9; padding: 20px 25px; font-weight: 600; font-size: 1.1rem; }
-                                    .detail-page .card-table { overflow: visible; }
-                                    .table-responsive { overflow-x: auto !important; overflow-y: hidden !important; pointer-events: auto !important; -webkit-overflow-scrolling: touch; }
-                                    .table-responsive > * { pointer-events: auto; }
-                                    .table thead th { background-color: #f8f9fa; color: #6c757d; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; border-bottom: none; padding: 12px 25px; white-space: nowrap; }
-                                    .table tbody td { padding: 15px 25px; vertical-align: middle; font-size: 0.95rem; border-color: #edf2f9; white-space: nowrap; }
-                                    .action-icon { color: var(--brand-teal); font-size: 1.1rem; margin: 0 5px; cursor: pointer; transition: color 0.2s; }
-                                    .action-icon:hover { color: var(--brand-teal-dark); }
-                                    .menu-toggle-btn { cursor: pointer; font-size: 1.5rem; display: none; }
-                                    .sidebar-close-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.35); background: transparent; color: #fff; font-size: 1.15rem; line-height: 1; padding: 0; }
-                                    .modal-header { border-bottom: none; }
-                                    .modal-title { font-weight: 600; letter-spacing: 0.5px; }
-                                    #profileSection .pagination, #profileSection nav.pagination { display: none !important; }
-                                    .brand-link { display: flex; align-items: center; height: 100%; }
+<html lang="en">
+<head>
+<script>
+if (localStorage.getItem("tracknow_smtr_logged_in") !== "true") {
+    window.location.replace("/smtr/supervisor");
+}
+<\/script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRACKnow SMTR Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-primary: #0F2A47;
+            --brand-primary-dark: #0A1E34;
+            --brand-primary-soft: #1B3A60;
+            --brand-accent: #C9A24B;
+            --brand-accent-dark: #B08A36;
+            --brand-bg: #F4F6FA;
+            --brand-surface: #FFFFFF;
+            --brand-text: #1F2A37;
+            --brand-muted: #6B7280;
+            --brand-border: #E5E9F0;
+            --sidebar-width: 248px;
+            --topbar-height: 64px;
 
-                                    @media (max-width: 767.98px) {
-                                        .navbar-top { height: auto; min-height: var(--mobile-top-nav-height); padding-top: 4px; padding-bottom: 4px; flex-wrap: wrap; row-gap: 6px; }
-                                        .navbar-top .navbar-nav { display: none; }
-                                        .main-content { margin-top: var(--mobile-top-nav-height); }
-                                        .sidebar { top: var(--mobile-top-nav-height); padding-top: 28px; }
-                                        .search-container { order: 2; flex: 0 0 100%; max-width: 100%; width: 100%; margin-top: 2px; margin-left: 0 !important; }
-                                        .search-container .search-form { width: 100% !important; }
-                                        .search-form .form-control { height: 44px; font-size: 1rem; padding-left: 2.2rem; }
-                                        .detail-page .detail-toolbar { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; margin-bottom: 14px !important; width: 100% !important; }
-                                        .detail-page .detail-toolbar > div:first-child { display: flex !important; align-items: center !important; gap: 6px !important; margin-bottom: 0 !important; width: 100% !important; }
-                                        .detail-page .detail-actions { width: auto !important; display: flex !important; align-items: center !important; margin-left: auto !important; }
-                                        .detail-page .detail-actions form { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 8px !important; width: auto !important; }
-                                        .detail-page .detail-actions .btn { flex: none !important; width: auto !important; padding: 6px 18px !important; font-size: 13px !important; font-weight: 600 !important; white-space: nowrap !important; }
-                                        .detail-page .page-title { font-size: 0.95rem; margin-bottom: 0; line-height: 1.2; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
-                                        .detail-page .card.card-stats, .detail-page .card.card-table { border-radius: 14px; margin-bottom: 14px; }
-                                        .detail-page .card.card-stats { padding: 14px !important; }
-                                        .detail-page .card.card-stats .row.g-3, .detail-page .card.card-stats .row.g-4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 14px !important; }
-                                        .detail-page .card.card-stats h6 { font-size: 0.92rem; margin-bottom: 0.3rem; }
-                                        .detail-page .card.card-stats p, .detail-page .card.card-stats input, .detail-page .card.card-stats select, .detail-page .card.card-stats textarea { width: 100%; font-size: 0.92rem; }
-                                        .detail-page .card.card-stats textarea { min-height: 92px; }
-                                        .detail-page .detail-items-table { min-width: 720px; }
-                                        .detail-page .detail-items-table thead th, .detail-page .detail-items-table tbody td { padding: 10px 12px; font-size: 0.86rem; }
-                                        .page-title { font-size: 1.7rem; margin-bottom: 0; }
-                                        .card-table { margin-bottom: 18px; }
-                                        .card-table .card-header { padding: 14px 14px; }
-                                        .table-responsive { overflow-x: auto !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
-                                        .dashboard-list-table thead th, .dashboard-list-table tbody td { white-space: nowrap !important; font-size: 0.9rem; padding: 10px 10px; }
-                                        .dashboard-list-table { min-width: 980px; }
-                                        .table-responsive::-webkit-scrollbar { height: 8px; }
-                                        .table-responsive::-webkit-scrollbar-thumb { background: rgba(53, 133, 139, 0.45); border-radius: 999px; }
-                                        .pagination { margin-bottom: 0; }
-                                        .pagination .page-link { padding: 0.35rem 0.55rem; font-size: 0.86rem; }
-                                        .table thead th, .table tbody td { padding: 10px 12px; font-size: 0.82rem; white-space: nowrap; }
-                                    }
-                                    @media (max-width: 991.98px) {
-                                        .menu-toggle-btn { display: block; }
-                                        .sidebar { transform: translateX(-100%); }
-                                        .sidebar.show { transform: translateX(0); box-shadow: 4px 0 15px rgba(0,0,0,0.1); }
-                                        .main-content { margin-left: 0; }
-                                        .sidebar.show~.main-content { margin-left: var(--sidebar-width); }
-                                    }
-                                    @media (max-width: 767.98px) {
-                                        .sidebar.show~.main-content { margin-left: 0; }
-                                        .sidebar.show { box-shadow: 10px 0 25px rgba(0,0,0,0.2); }
-                                    }
-                                </style>
-                            </head>
-                            <body>
-                                <nav class="navbar navbar-expand navbar-dark navbar-top fixed-top px-3">
-                                    <div class="brand-link">
-                                        <h1 style="color: white; font-weight: bold; margin: 0;">TRACKNOW</h1>
-                                    </div>
-                                    <div class="search-container flex-grow-1 ms-2">
-                                        <form class="search-form position-relative" id="topbarSearchForm" method="post">
-                                            <i class="bi bi-search search-icon" onclick="document.getElementById('topbarSearchForm').submit();"></i>
-                                            <input class="form-control" name="search" value="${context.request.parameters.search || ""}" type="text" placeholder="Search">
-                                            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail || ""}"/>
-                                            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated || ""}"/>
-                                            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId || ""}"/>
-                                            <input type="hidden" name="verify_otp" value="verify_otp"/>
-                                            <input type="hidden" name="dashboard" value="${activeDashboard || "SMTRList"}"/>
-                                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
-                                            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
-                                            <input type="hidden" name="smtrStatusFilter" value="${context.request.parameters.smtrStatusFilter || ""}"/>
-                                            <input type="hidden" name="pageNumber" value="1"/>
-                                        </form>
-                                    </div>
+            --stat-blue: #0F2A47;
+            --stat-amber: #C9A24B;
+            --stat-green: #1F8A5F;
+            --stat-teal: #1E6B8C;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--brand-bg);
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            color: var(--brand-text);
+            overflow-x: hidden;
+            letter-spacing: 0.1px;
+            margin: 0;
+        }
 
-                                    <div class="navbar-nav ms-auto align-items-center">
-                                        <h2 class="text-light fw-bold mt-2 d-none d-sm-block">TRACKnow</h2>
-                                    </div>
-                                </nav>
+        /* ============ SIDEBAR ============ */
+        .app-sidebar {
+            position: fixed; top: 0; bottom: 0; left: 0;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #0A1E34 0%, #0F2A47 100%);
+            color: #fff;
+            display: flex; flex-direction: column;
+            z-index: 1030;
+            border-right: 1px solid rgba(255,255,255,0.06);
+            transition: transform 0.25s ease;
+        }
+        .app-sidebar::before {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--brand-accent), transparent);
+        }
+        .sidebar-brand {
+            padding: 22px 22px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .sidebar-brand .b-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800; letter-spacing: 6px; font-size: 18px;
+            color: #fff;
+        }
+        .sidebar-brand .b-sub {
+            display: block; margin-top: 4px;
+            font-size: 10.5px; letter-spacing: 3px;
+            color: var(--brand-accent); text-transform: uppercase;
+            font-weight: 600;
+        }
+        .sidebar-nav {
+            padding: 16px 12px; flex: 1; overflow-y: auto;
+            list-style: none; margin: 0;
+        }
+        .sidebar-nav .nav-item { margin-bottom: 4px; }
+        .sidebar-nav .nav-link {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 14px;
+            border-radius: 8px;
+            color: rgba(255,255,255,0.72);
+            font-weight: 500; font-size: 14px;
+            text-decoration: none;
+            transition: all 0.16s ease;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-nav .nav-link i { font-size: 16px; width: 20px; text-align: center; opacity: 0.9; }
+        .sidebar-nav .nav-link:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+        .sidebar-nav .nav-link.active {
+            background: linear-gradient(135deg, rgba(201,162,75,0.20), rgba(201,162,75,0.06));
+            color: #fff;
+            border-left-color: var(--brand-accent);
+            box-shadow: inset 0 0 0 1px rgba(201,162,75,0.18);
+        }
+        .sidebar-nav .nav-link.active i { color: var(--brand-accent); opacity: 1; }
+        .sidebar-divider {
+            height: 1px; background: rgba(255,255,255,0.08);
+            margin: 8px 12px;
+        }
+        .sidebar-user {
+            padding: 14px 14px 18px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .sidebar-user .avatar {
+            width: 36px; height: 36px; border-radius: 8px;
+            background: linear-gradient(135deg, var(--brand-accent), var(--brand-accent-dark));
+            color: #0A1E34; font-weight: 700; font-size: 13px;
+            display: inline-flex; align-items: center; justify-content: center;
+            letter-spacing: 0.5px;
+        }
+        .sidebar-user .who { line-height: 1.2; }
+        .sidebar-user .who .name { font-size: 13px; font-weight: 600; color: #fff; }
+        .sidebar-user .who .role { font-size: 11px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 1px; }
 
-                                <aside class="sidebar">
-                                    <div class="d-lg-none text-end mb-0 p-0">
-                                        <button type="button" class="sidebar-close-btn" id="sidebar-close" aria-label="Close menu">
-                                            <i class="bi bi-x-lg"></i>
-                                        </button>
-                                    </div>
-                                    <ul class="nav nav-pills flex-column mb-auto">
-                                        <li class="nav-item">
-                                            <a href="#" class="nav-link active" id="dashboardNavLink">
-                                                <i class="bi bi-grid-1x2-fill"></i> Dashboard
-                                            </a>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a href="#" class="nav-link" id="profileNavLink">
-                                                <i class="bi bi-person-circle"></i> Profile
-                                            </a>
-                                        </li>
-                                    </ul>
-                                    <hr class="text-white-50 my-3">
-                                    <form id="logoutForm" method="post">
-                                        <ul class="nav nav-pills flex-column">
-                                            <li class="active">
-                                                <a href="#" id="logoutBtn" class="nav-link">
-                                                    <i class="bi bi-box-arrow-right"></i> Logout
-                                                </a>
-                                                <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
-                                                <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
-                                                <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
-                                                <input type="hidden" name="logout" value="true"/>
-                                            </li>
-                                        </ul>
-                                    </form>
-                                </aside>
+        /* ============ TOPBAR ============ */
+        .app-topbar {
+            position: fixed; top: 0; left: var(--sidebar-width); right: 0;
+            height: var(--topbar-height);
+            background: #fff;
+            border-bottom: 1px solid var(--brand-border);
+            display: flex; align-items: center; gap: 16px;
+            padding: 0 22px;
+            z-index: 1020;
+        }
+        .menu-toggle-btn {
+            display: none; background: transparent; border: none;
+            color: var(--brand-primary); font-size: 22px; cursor: pointer;
+        }
+        .topbar-search {
+            flex: 1; max-width: 480px;
+            position: relative;
+        }
+        .topbar-search i {
+            position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%); color: var(--brand-muted); font-size: 14px;
+        }
+        .topbar-search input {
+            width: 100%; border: 1px solid var(--brand-border);
+            background: #F7F9FC; border-radius: 10px;
+            padding: 10px 14px 10px 40px;
+            font-size: 14px; color: var(--brand-text);
+            transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+        }
+        .topbar-search input:focus {
+            outline: none; background: #fff;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 4px rgba(15,42,71,0.08);
+        }
+        .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+        .topbar-user-chip {
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 14px 6px 6px;
+            border: 1px solid var(--brand-border);
+            border-radius: 999px; background: #fff;
+        }
+        .topbar-user-chip .av {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--brand-primary); color: #fff;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+        }
+        .topbar-user-chip .nm { font-size: 13px; font-weight: 600; color: var(--brand-text); }
+        .topbar-user-chip .nm small { display: block; font-size: 10.5px; color: var(--brand-muted); font-weight: 500; letter-spacing: 0.3px; }
 
-                                <main class="main-content p-3">
-                                    <div id="dashboardSection">`;
+        /* ============ MAIN ============ */
+        .app-main {
+            margin-left: var(--sidebar-width);
+            padding-top: calc(var(--topbar-height) + 22px);
+            padding-right: 28px; padding-left: 28px; padding-bottom: 60px;
+            min-height: 100vh;
+            transition: margin-left 0.25s ease;
+        }
+        .page-title {
+            font-size: 24px; font-weight: 700; color: var(--brand-primary);
+            margin: 0 0 4px; letter-spacing: 0.2px;
+            position: relative; padding-bottom: 8px;
+            display: inline-block;
+        }
+        .page-title::after {
+            content: ""; position: absolute; left: 0; bottom: 0;
+            width: 48px; height: 3px; background: var(--brand-accent); border-radius: 2px;
+        }
+        .page-subtitle { color: var(--brand-muted); font-size: 13.5px; margin: 0 0 22px; }
+
+        /* ============ STAT CARDS (4-col) ============ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            position: relative;
+            background: #fff;
+            border: 1px solid var(--brand-border);
+            border-radius: 14px;
+            padding: 18px 18px 16px;
+            box-shadow: 0 2px 6px rgba(15,42,71,0.04);
+            transition: transform .18s ease, box-shadow .18s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: var(--stat-accent, var(--brand-primary));
+            border-radius: 14px 14px 0 0;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px -16px rgba(15,42,71,0.22); }
+        .stat-card .stat-head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .stat-card .stat-label {
+            font-size: 11.5px; font-weight: 700; letter-spacing: 1.4px;
+            color: var(--brand-muted); text-transform: uppercase;
+        }
+        .stat-card .stat-icon {
+            width: 34px; height: 34px; border-radius: 9px;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: color-mix(in srgb, var(--stat-accent) 12%, transparent);
+            color: var(--stat-accent); font-size: 16px;
+        }
+        .stat-card .stat-value {
+            font-size: 28px; font-weight: 700; color: var(--brand-primary);
+            line-height: 1.1; margin-bottom: 4px;
+        }
+        .stat-card .stat-sub { font-size: 12.5px; color: var(--brand-muted); }
+
+        .sc-blue  { --stat-accent: var(--stat-blue); }
+        .sc-amber { --stat-accent: var(--stat-amber); }
+        .sc-green { --stat-accent: var(--stat-green); }
+        .sc-teal  { --stat-accent: var(--stat-teal); }
+
+        /* ============ TABLE CARD ============ */
+        .panel {
+            background: #fff;
+            border: 1px solid var(--brand-border);
+            border-radius: 14px;
+            box-shadow: 0 2px 6px rgba(15,42,71,0.04);
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+        .panel-header {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; flex-wrap: wrap;
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--brand-border);
+            background: #fff;
+        }
+        .panel-header h5 {
+            margin: 0; font-size: 16px; font-weight: 700;
+            color: var(--brand-primary); letter-spacing: 0.2px;
+        }
+        .panel-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .panel-filters .form-select {
+            border: 1px solid var(--brand-border) !important;
+            background-color: #fff !important;
+            color: var(--brand-text) !important;
+            border-radius: 8px !important;
+            font-size: 13px !important;
+            padding: 7px 30px 7px 12px !important;
+            height: auto !important;
+            min-width: 160px;
+        }
+        .panel-filters .form-select:focus {
+            border-color: var(--brand-primary) !important;
+            box-shadow: 0 0 0 3px rgba(15,42,71,0.10) !important;
+        }
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table {
+            width: 100%; margin: 0; border-collapse: collapse;
+        }
+        .table thead th {
+            background: #F7F9FC;
+            color: var(--brand-primary);
+            font-weight: 700; font-size: 11.5px;
+            text-transform: uppercase; letter-spacing: 1px;
+            padding: 14px 22px;
+            border-bottom: 1px solid var(--brand-border);
+            white-space: nowrap;
+        }
+        .table tbody td {
+            padding: 16px 22px;
+            font-size: 13.5px; color: var(--brand-text);
+            border-bottom: 1px solid #EEF1F6;
+            vertical-align: middle; white-space: nowrap;
+        }
+        .table tbody tr:last-child td { border-bottom: none; }
+        .table tbody tr { transition: background-color .12s ease; }
+        .table tbody tr:hover { background-color: #F8FAFD; }
+
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 999px;
+            font-size: 12px; font-weight: 600; letter-spacing: 0.2px;
+            border: 1px solid transparent;
+        }
+        .status-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .status-pending  { color: #B7791F; background: #FFF6E1; border-color: #F3DFA2; }
+        .status-approved { color: #1F8A5F; background: #E7F5EF; border-color: #BFE3D2; }
+        .status-rejected { color: #C0392B; background: #FDECEA; border-color: #F4C2BC; }
+        .status-fulfilled{ color: #1E6B8C; background: #E6F1F7; border-color: #BBDAE9; }
+        .status-default  { color: #475569; background: #F1F5F9; border-color: #E2E8F0; }
+
+        .urgency-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 12.5px; font-weight: 600;
+        }
+        .urgency-pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; }
+        .urgency-high::before   { background: #D14343; }
+        .urgency-medium::before { background: #E0A106; }
+        .urgency-low::before    { background: #1F8A5F; }
+        .urgency-default::before{ background: #94A3B8; }
+
+        .action-icon-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px;
+            border-radius: 999px;
+            background: var(--brand-primary); color: #fff;
+            font-size: 14px;
+            border: none; cursor: pointer;
+            transition: background-color .15s ease, transform .15s ease;
+        }
+        .action-icon-btn:hover { background: var(--brand-primary-soft); transform: translateX(2px); color: #fff; }
+
+        /* ============ PAGINATION ============ */
+        .pagination { display: inline-flex; padding: 0; margin: 0; list-style: none; gap: 4px; }
+        .pagination .page-item .page-link {
+            border: 1px solid var(--brand-border);
+            color: var(--brand-primary);
+            border-radius: 8px !important;
+            font-size: 13px; font-weight: 600;
+            padding: 6px 12px;
+            background: #fff;
+        }
+        .pagination .page-item.active .page-link {
+            background: var(--brand-primary); border-color: var(--brand-primary); color: #fff;
+        }
+        .pagination .page-link:hover { background: var(--brand-bg); color: var(--brand-primary-dark); }
+
+        /* ============ DETAIL PAGE ============ */
+        .detail-toolbar {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+        }
+        .back-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: 999px;
+            background: var(--brand-accent); color: #fff;
+            border: none; cursor: pointer; font-size: 15px;
+            transition: filter .15s ease, transform .15s ease;
+            box-shadow: 0 4px 12px -4px rgba(176,138,54,0.55);
+        }
+        .back-btn:hover { filter: brightness(1.05); transform: translateX(-2px); color: #fff; }
+
+        .detail-card {
+            background: #fff; border: 1px solid var(--brand-border);
+            border-radius: 14px; padding: 26px 28px;
+            box-shadow: 0 2px 6px rgba(15,42,71,0.04);
+            margin-bottom: 20px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 22px 28px;
+        }
+        .detail-field .d-label {
+            display: block;
+            font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+            text-transform: uppercase; color: var(--brand-muted);
+            margin-bottom: 6px;
+        }
+        .detail-field .d-value {
+            color: var(--brand-accent-dark); font-weight: 600; font-size: 15px; margin: 0;
+            word-break: break-word;
+        }
+        .detail-field .d-value.plain { color: var(--brand-text); font-weight: 500; }
+        .detail-field .form-control,
+        .detail-field .form-select {
+            width: 100%;
+            background: #FAFBFD;
+            border: 1.5px solid var(--brand-border);
+            color: var(--brand-text);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .detail-field .form-control[readonly],
+        .detail-field .form-select[readonly] { background: #FAFBFD; cursor: default; }
+        .detail-field .form-control:focus,
+        .detail-field .form-select:focus {
+            outline: none; border-color: var(--brand-primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(15,42,71,0.10);
+        }
+
+        .btn-approve, .btn-reject, .btn-edit, .btn-save, .btn-fulfill {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 9px 18px;
+            font-size: 13.5px; font-weight: 600;
+            border-radius: 8px; cursor: pointer; border: none;
+            letter-spacing: 0.3px;
+            transition: filter .15s ease, transform .15s ease;
+        }
+        .btn-approve, .btn-fulfill {
+            background: var(--brand-primary); color: #fff;
+            box-shadow: 0 6px 16px -8px rgba(15,42,71,0.55);
+        }
+        .btn-reject, .btn-edit, .btn-save {
+            background: var(--brand-accent); color: #fff;
+            box-shadow: 0 6px 16px -8px rgba(176,138,54,0.55);
+        }
+        .btn-approve:hover, .btn-reject:hover, .btn-edit:hover, .btn-save:hover, .btn-fulfill:hover {
+            filter: brightness(1.07); color: #fff;
+        }
+
+        .items-table-wrap { padding: 0; }
+
+        /* ============ PROFILE ============ */
+        .profile-card {
+            background: #fff; border: 1px solid var(--brand-border);
+            border-radius: 14px; padding: 36px 36px 32px;
+            box-shadow: 0 2px 6px rgba(15,42,71,0.04);
+        }
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr 1fr;
+            gap: 32px; align-items: start;
+        }
+        .profile-avatar {
+            width: 140px; height: 140px; border-radius: 50%;
+            background: #E6F1F4;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: #1E6B8C; font-size: 80px;
+            margin: 0 auto;
+        }
+        .profile-field { margin-bottom: 18px; }
+        .profile-field .pf-label {
+            font-size: 13px; font-weight: 700; color: var(--brand-primary);
+            margin: 0 0 4px;
+        }
+        .profile-field .pf-value {
+            font-size: 14px; color: var(--brand-accent-dark); font-weight: 600;
+            margin: 0; word-break: break-word;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 1199.98px) {
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 991.98px) {
+            .menu-toggle-btn { display: inline-flex; }
+            .app-sidebar { transform: translateX(-100%); }
+            .app-sidebar.show { transform: translateX(0); box-shadow: 8px 0 22px rgba(15,42,71,0.18); }
+            .app-topbar { left: 0; }
+            .app-main { margin-left: 0; }
+            .profile-grid { grid-template-columns: 1fr; text-align: center; }
+            .profile-avatar { margin: 0 auto 8px; }
+        }
+        @media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .app-main { padding-left: 16px; padding-right: 16px; }
+            .topbar-user-chip .nm { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="app-sidebar" id="appSidebar">
+        <div class="sidebar-brand">
+            <div class="b-title">TRACKNOW</div>
+            <span class="b-sub">Supervisor Workspace</span>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="nav-item">
+                <a href="#" class="nav-link active" id="dashboardNavLink">
+                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" id="profileNavLink">
+                    <i class="bi bi-person-circle"></i> Profile
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-divider"></div>
+        <form id="logoutForm" method="post" style="padding: 0 12px 8px;">
+            <a href="#" id="logoutBtn" class="nav-link" style="color: rgba(255,255,255,0.75); display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 8px; font-size: 14px; text-decoration: none;">
+                <i class="bi bi-box-arrow-right" style="font-size: 16px; width: 20px; text-align: center;"></i> Logout
+            </a>
+            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
+            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
+            <input type="hidden" name="logout" value="true"/>
+        </form>
+        <div class="sidebar-user">
+            <div class="avatar">SM</div>
+            <div class="who">
+                <div class="name">SMTR Supervisor</div>
+                <div class="role">Supervisor</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============ TOPBAR ============ -->
+    <header class="app-topbar">
+        <button class="menu-toggle-btn" id="menuToggleBtn"><i class="bi bi-list"></i></button>
+        <form class="topbar-search" method="post" id="topbarSearchForm">
+            <i class="bi bi-search"></i>
+            <input name="search" value="${context.request.parameters.search || ""}" type="text" placeholder="Search anything..."/>
+            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail || ""}"/>
+            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated || ""}"/>
+            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId || ""}"/>
+            <input type="hidden" name="verify_otp" value="verify_otp"/>
+            <input type="hidden" name="dashboard" value="${activeDashboard || "SMTRList"}"/>
+            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
+            <input type="hidden" name="smtrStatusFilter" value="${context.request.parameters.smtrStatusFilter || ""}"/>
+            <input type="hidden" name="pageNumber" value="1"/>
+        </form>
+        <div class="topbar-right">
+            <div class="topbar-user-chip">
+                <div class="av">SM</div>
+                <div class="nm">SMTR Supervisor<small>Supervisor</small></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div id="dashboardSection">`;
 
                         // ─── SMTR LIST VIEW ──────────────────────────────────────────────────────────
                         if (activeDashboard === "SMTRList") {
-                            // ── Fetch true totals per status (independent of pagination) ──
-                            function _fetchSmtrTotal(statusFilterValue) {
-                                try {
-                                    var _opts = {
-                                        urlParams: {
-                                            vendorInternalId: context.request.parameters.vendorInternalId,
-                                            userAction: "getSMTRRecords",
-                                            pageNumber: 1,
-                                            vendorEmail: context.request.parameters.vendorEmail,
-                                            smtrStatusFilter: statusFilterValue,
-                                            urgencyLevelFilter: context.request.parameters.urgencyLevelFilter || "",
-                                            smtrUserRole: smtrUserRoleParam,
-                                            globalSearchValue: context.request.parameters.search || ""
-                                        },
-                                        method: "GET",
-                                        scriptId: "customscript_tm_rs_pr_po_getdata",
-                                        deploymentId: "customdeploy_tm_rs_pr_po_getdata"
-                                    };
-                                    var _res = https.requestRestlet(_opts);
-                                    var _obj = safeParseJSON(_res && _res.body);
-                                    if (_obj && (_obj.totalNumberOfRecords || _obj.totalNumberOfRecords === 0)) return Number(_obj.totalNumberOfRecords) || 0;
-                                    if (_obj && (_obj.totalRecords || _obj.totalRecords === 0)) return Number(_obj.totalRecords) || 0;
-                                    var _pages = (_obj && Number(_obj.totalNumberOfPages)) || 0;
-                                    var _arr = (_obj && _obj.smtrRecordsData) || [];
-                                    if (_pages > 0 && _arr.length > 0) return _pages * _arr.length;
-                                    return _arr.length;
-                                } catch (e) {
-                                    log.error("SMTR Count Fetch Error", "filter=" + statusFilterValue + " err=" + e);
-                                    return 0;
-                                }
-                            }
-
-                            var totalCount = _fetchSmtrTotal("");
-                            var pendingCount = _fetchSmtrTotal("1");
-                            var approvedCount = _fetchSmtrTotal("2");
-                            var fulfilledCount = _fetchSmtrTotal("5");
-
-                            var activeCardFilter = context.request.parameters.smtrStatusFilter || "";
-                            function _cardActive(val) { return activeCardFilter === val ? " active" : ""; }
-
-                            dashboardPage += `<div class="container-fluid p-0">
-                                <div class="d-flex align-items-center gap-3 mb-4">
-                                    <i class="bi bi-list menu-toggle-btn"></i>
-                                    <h1 class="page-title m-0">TRACKnow SMTR Supervisor</h1>
-                                </div>
-                                <div class="row g-3 mb-4">
-                                    <div class="col-6 col-md-3">
-                                        <form class="card card-stats h-100 p-3 nav-card callingmethod${_cardActive("")}" role="button" method="post">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="card-title mb-2">SMTR List</h6>
-                                                    <div class="stats-number">${totalCount}</div>
-                                                </div>
-                                                <i class="bi bi-file-earmark-text fs-3 opacity-75"></i>
-                                            </div>
-                                            <input type="hidden" name="dashboard" value="SMTRList"/>
-                                            <input type="hidden" name="smtrStatusFilter" value=""/>
-                                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
-                                            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
-                                            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
-                                            <input type="hidden" name="verified" value="true"/>
-                                            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
-                                            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
-                                            <input type="hidden" name="search" value="${context.request.parameters.search || ""}"/>
-                                        </form>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <form class="card card-stats h-100 p-3 nav-card callingmethod${_cardActive("1")}" role="button" method="post">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="card-title mb-2">Pending Approval</h6>
-                                                    <div class="stats-number">${pendingCount}</div>
-                                                </div>
-                                                <i class="bi bi-hourglass-split fs-3 opacity-75"></i>
-                                            </div>
-                                            <input type="hidden" name="dashboard" value="SMTRList"/>
-                                            <input type="hidden" name="smtrStatusFilter" value="1"/>
-                                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
-                                            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
-                                            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
-                                            <input type="hidden" name="verified" value="true"/>
-                                            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
-                                            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
-                                            <input type="hidden" name="search" value="${context.request.parameters.search || ""}"/>
-                                        </form>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <form class="card card-stats h-100 p-3 nav-card callingmethod${_cardActive("2")}" role="button" method="post">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="card-title mb-2">Approved</h6>
-                                                    <div class="stats-number">${approvedCount}</div>
-                                                </div>
-                                                <i class="bi bi-check2-circle fs-3 opacity-75"></i>
-                                            </div>
-                                            <input type="hidden" name="dashboard" value="SMTRList"/>
-                                            <input type="hidden" name="smtrStatusFilter" value="2"/>
-                                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
-                                            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
-                                            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
-                                            <input type="hidden" name="verified" value="true"/>
-                                            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
-                                            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
-                                            <input type="hidden" name="search" value="${context.request.parameters.search || ""}"/>
-                                        </form>
-                                    </div>
-                                    <div class="col-6 col-md-3">
-                                        <form class="card card-stats h-100 p-3 nav-card callingmethod${_cardActive("5")}" role="button" method="post">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="card-title mb-2">Fulfilled</h6>
-                                                    <div class="stats-number">${fulfilledCount}</div>
-                                                </div>
-                                                <i class="bi bi-truck fs-3 opacity-75"></i>
-                                            </div>
-                                            <input type="hidden" name="dashboard" value="SMTRList"/>
-                                            <input type="hidden" name="smtrStatusFilter" value="5"/>
-                                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
-                                            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
-                                            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
-                                            <input type="hidden" name="verified" value="true"/>
-                                            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
-                                            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
-                                            <input type="hidden" name="search" value="${context.request.parameters.search || ""}"/>
-                                        </form>
-                                    </div>
-                                </div>`;
-
-
+                            // submit approve/reject/fulfill before fetching list (unchanged backend)
                             if (context.request.parameters.approvalStatus === "Approved") {
                                 https.requestRestlet({
                                     body: JSON.stringify({
@@ -900,71 +1921,163 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                             var currentFilter = context.request.parameters.smtrStatusFilter || "";
                             var urgencyLevelFilter = context.request.parameters.urgencyLevelFilter || "";
 
-                            dashboardPage += `<div class="card card-table mb-4">
-                                <div class="card-header bg-white py-3">
-                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                        <div><h5 class="m-0 font-weight-bold">SMTR List</h5></div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <form class="selectingfilter" method="post">
-                                                <div class="d-flex gap-3 flex-wrap">
-                                                    <select class="form-select form-select-sm" name="urgencyLevelFilter" style="width: auto;">
-                                                        <option value="" ${urgencyLevelFilter === "" ? "selected" : ""}>Urgency Level</option>
-                                                        <option value="1" ${urgencyLevelFilter === "1" ? "selected" : ""}>Low</option>
-                                                        <option value="2" ${urgencyLevelFilter === "2" ? "selected" : ""}>Medium</option>
-                                                        <option value="3" ${urgencyLevelFilter === "3" ? "selected" : ""}>High</option>
-                                                    </select>
-                                                    <select class="form-select form-select-sm" name="smtrStatusFilter" style="width: auto;">
-                                                        <option value="" ${currentFilter === "" ? "selected" : ""}>All Status</option>
-                                                        <option value="1" ${currentFilter === "1" ? "selected" : ""}>Pending for Approval</option>
-                                                        <option value="2" ${currentFilter === "2" ? "selected" : ""}>Approved</option>
-                                                        <option value="3" ${currentFilter === "3" ? "selected" : ""}>Rejected</option>
-                                                        <option value="5" ${currentFilter === "5" ? "selected" : ""}>Fulfilled</option>
-                                                    </select>
-                                                    <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
-                                                    <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
-                                                    <input type="hidden" name="dashboard" value="SMTRList"/>
-                                                    <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
-                                                    <input type="hidden" name="verified" value="true"/>
-                                                    <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
-                                                    <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0 align-middle dashboard-list-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Document Number</th>
-                                                <th>Purpose</th>
-                                                <th>Location</th>
-                                                <th>Req. Date</th>
-                                                <th>Need By Date</th>
-                                                <th>Urgency Level</th>
-                                                <th>Status</th>
-                                                <th>Info</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>`;
-
                             var transactionDataArray = myTransactionDataObj && myTransactionDataObj.smtrRecordsData
                                 ? myTransactionDataObj.smtrRecordsData : [];
-                            for (var index = 0; index < transactionDataArray.length; index++) {
-                                dashboardPage += `<tr>
-                                    <td>${transactionDataArray[index].documentNumber}</td>
-                                    <td>${transactionDataArray[index].purchasePurpose}</td>
-                                    <td>${transactionDataArray[index].smtrTerritory}</td>
-                                    <td>${transactionDataArray[index].RequestedArrivalDate}</td>
-                                    <td>${transactionDataArray[index].DateNeededtoArrive}</td>
-                                    <td>${transactionDataArray[index].urgencyLevel}</td>
-                                    <td>${transactionDataArray[index].status}</td>
-                                    <td>
-                                        <form class="callingmethod" method="post">
-                                            <i class="bi bi-arrow-right-circle-fill action-icon fs-4"></i>
+
+                            // Derive stat counts from whatever the backend already returns (no new calls).
+                            var totalSmtr = (myTransactionDataObj && (myTransactionDataObj.totalRecords || myTransactionDataObj.totalNumberOfRecords)) || transactionDataArray.length;
+                            var pendingCount = 0, approvedCount = 0, fulfilledCount = 0;
+                            for (var sIdx = 0; sIdx < transactionDataArray.length; sIdx++) {
+                                var st = String(transactionDataArray[sIdx].status || "").toLowerCase();
+                                if (st.indexOf("pending") !== -1) pendingCount++;
+                                else if (st.indexOf("approved") !== -1) approvedCount++;
+                                else if (st.indexOf("fulfilled") !== -1) fulfilledCount++;
+                            }
+
+                            dashboardPage += `<div>
+                                <div style="display:flex; align-items:center; gap:14px; margin-bottom: 4px;">
+                                    <h1 class="page-title m-0">SMTR Dashboard</h1>
+                                </div>
+                                <p class="page-subtitle">Overview of submitted material transfer requests and approvals</p>
+
+                                <div class="stats-grid">
+                                    <form class="stat-card sc-blue callingmethod" method="post">
+                                        <div class="stat-head">
+                                            <span class="stat-label">SMTR List</span>
+                                            <span class="stat-icon"><i class="bi bi-file-earmark-text"></i></span>
+                                        </div>
+                                        <div class="stat-value">${totalSmtr}</div>
+                                        <div class="stat-sub">Total requests</div>
+                                        <input type="hidden" name="dashboard" value="SMTRList"/>
+                                        <input type="hidden" name="smtrStatusFilter" value=""/>
+                                        <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+                                        <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
+                                        <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
+                                        <input type="hidden" name="verified" value="true"/>
+                                        <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
+                                        <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+                                    </form>
+                                    <form class="stat-card sc-amber callingmethod" method="post">
+                                        <div class="stat-head">
+                                            <span class="stat-label">Pending Approval</span>
+                                            <span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+                                        </div>
+                                        <div class="stat-value">${pendingCount}</div>
+                                        <div class="stat-sub">Requests awaiting approval</div>
+                                        <input type="hidden" name="dashboard" value="SMTRList"/>
+                                        <input type="hidden" name="smtrStatusFilter" value="1"/>
+                                        <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+                                        <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
+                                        <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
+                                        <input type="hidden" name="verified" value="true"/>
+                                        <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
+                                        <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+                                    </form>
+                                    <form class="stat-card sc-green callingmethod" method="post">
+                                        <div class="stat-head">
+                                            <span class="stat-label">Approved</span>
+                                            <span class="stat-icon"><i class="bi bi-check2-circle"></i></span>
+                                        </div>
+                                        <div class="stat-value">${approvedCount}</div>
+                                        <div class="stat-sub">Requests approved</div>
+                                        <input type="hidden" name="dashboard" value="SMTRList"/>
+                                        <input type="hidden" name="smtrStatusFilter" value="2"/>
+                                        <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+                                        <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
+                                        <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
+                                        <input type="hidden" name="verified" value="true"/>
+                                        <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
+                                        <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+                                    </form>
+                                    <form class="stat-card sc-teal callingmethod" method="post">
+                                        <div class="stat-head">
+                                            <span class="stat-label">Fulfilled</span>
+                                            <span class="stat-icon"><i class="bi bi-truck"></i></span>
+                                        </div>
+                                        <div class="stat-value">${fulfilledCount}</div>
+                                        <div class="stat-sub">Requests fulfilled</div>
+                                        <input type="hidden" name="dashboard" value="SMTRList"/>
+                                        <input type="hidden" name="smtrStatusFilter" value="5"/>
+                                        <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+                                        <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
+                                        <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
+                                        <input type="hidden" name="verified" value="true"/>
+                                        <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
+                                        <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+                                    </form>
+                                </div>
+
+                                <div class="panel">
+                                    <div class="panel-header">
+                                        <h5>Recent SMTR Records</h5>
+                                        <form class="selectingfilter panel-filters" method="post">
+                                            <select class="form-select" name="urgencyLevelFilter">
+                                                <option value="" ${urgencyLevelFilter === "" ? "selected" : ""}>Urgency Level</option>
+                                                <option value="1" ${urgencyLevelFilter === "1" ? "selected" : ""}>Low</option>
+                                                <option value="2" ${urgencyLevelFilter === "2" ? "selected" : ""}>Medium</option>
+                                                <option value="3" ${urgencyLevelFilter === "3" ? "selected" : ""}>High</option>
+                                            </select>
+                                            <select class="form-select" name="smtrStatusFilter">
+                                                <option value="" ${currentFilter === "" ? "selected" : ""}>All Status</option>
+                                                <option value="1" ${currentFilter === "1" ? "selected" : ""}>Pending for Approval</option>
+                                                <option value="2" ${currentFilter === "2" ? "selected" : ""}>Approved</option>
+                                                <option value="3" ${currentFilter === "3" ? "selected" : ""}>Rejected</option>
+                                                <option value="5" ${currentFilter === "5" ? "selected" : ""}>Fulfilled</option>
+                                            </select>
                                             <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
                                             <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
-                                            <input type="hidden" name="smtrInternalId" value="${transactionDataArray[index].internalId}"/>
+                                            <input type="hidden" name="dashboard" value="SMTRList"/>
+                                            <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
+                                            <input type="hidden" name="verified" value="true"/>
+                                            <input type="hidden" name="employeeInternalId" value="${context.request.parameters.employeeInternalId}"/>
+                                            <input type="hidden" name="authenticated" value="${context.request.parameters.authenticated}"/>
+                                        </form>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table dashboard-list-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Document Number</th>
+                                                    <th>Purpose</th>
+                                                    <th>Location</th>
+                                                    <th>Req. Date</th>
+                                                    <th>Need By Date</th>
+                                                    <th>Urgency Level</th>
+                                                    <th>Status</th>
+                                                    <th>Info</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>`;
+
+                            for (var index = 0; index < transactionDataArray.length; index++) {
+                                var row = transactionDataArray[index];
+                                var urg = String(row.urgencyLevel || "").toLowerCase();
+                                var urgClass = "urgency-default";
+                                if (urg.indexOf("high") !== -1) urgClass = "urgency-high";
+                                else if (urg.indexOf("medium") !== -1) urgClass = "urgency-medium";
+                                else if (urg.indexOf("low") !== -1) urgClass = "urgency-low";
+
+                                var st = String(row.status || "").toLowerCase();
+                                var stClass = "status-default";
+                                if (st.indexOf("pending") !== -1) stClass = "status-pending";
+                                else if (st.indexOf("approved") !== -1) stClass = "status-approved";
+                                else if (st.indexOf("rejected") !== -1) stClass = "status-rejected";
+                                else if (st.indexOf("fulfilled") !== -1) stClass = "status-fulfilled";
+
+                                dashboardPage += `<tr>
+                                    <td><strong style="color: var(--brand-primary);">${row.documentNumber}</strong></td>
+                                    <td>${row.purchasePurpose}</td>
+                                    <td>${row.smtrTerritory}</td>
+                                    <td>${row.RequestedArrivalDate}</td>
+                                    <td>${row.DateNeededtoArrive}</td>
+                                    <td><span class="urgency-pill ${urgClass}">${row.urgencyLevel}</span></td>
+                                    <td><span class="status-pill ${stClass}">${row.status}</span></td>
+                                    <td>
+                                        <form class="callingmethod m-0" method="post">
+                                            <button type="button" class="action-icon-btn" aria-label="View"><i class="bi bi-arrow-right"></i></button>
+                                            <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
+                                            <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
+                                            <input type="hidden" name="smtrInternalId" value="${row.internalId}"/>
                                             <input type="hidden" name="recordType" value="SMTRRecord"/>
                                             <input type="hidden" name="smtrUserRole" value="${smtrUserRoleParam}"/>
                                             <input type="hidden" name="verified" value="true"/>
@@ -976,22 +2089,26 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                 </tr>`;
                             }
 
-                            dashboardPage += `</tbody></table></div></div></div>`;
+                            if (transactionDataArray.length === 0) {
+                                dashboardPage += `<tr><td colspan="8" style="text-align:center; color: var(--brand-muted); padding: 36px;">No records found</td></tr>`;
+                            }
+
+                            dashboardPage += `</tbody></table></div></div>`;
 
                             if (myTransactionDataObj && myTransactionDataObj.totalNumberOfPages > 1) {
                                 var currentPageValue = parseInt(context.request.parameters.pageNumber, 10) || 1;
                                 var totalPages = parseInt(myTransactionDataObj.totalNumberOfPages, 10) || 1;
-                                dashboardPage += `<nav aria-label="Page navigation" class="d-flex justify-content-center p-3">
+                                dashboardPage += `<nav aria-label="Page navigation" style="display:flex; justify-content:center; padding: 8px 0 24px;">
                                     <form method="post" id="paginationForm">
-                                    <ul class="pagination justify-content-center">
+                                    <ul class="pagination">
                                         <li class="page-item ${currentPageValue <= 1 ? "disabled" : ""}" role="button" id="previousPage">
-                                            <a class="page-link" style="color: var(--brand-teal); ${currentPageValue <= 1 ? "pointer-events: none; opacity: 0.6;" : ""}">Previous</a>
+                                            <a class="page-link" style="${currentPageValue <= 1 ? "pointer-events: none; opacity: 0.5;" : ""}">Previous</a>
                                         </li>
-                                        <li class="page-item" role="button" id="page1"><a class="page-link text-white" style="background-color: var(--brand-orange);">${currentPageValue}</a></li>
-                                        <li class="page-item ${currentPageValue + 1 > totalPages ? "disabled" : ""}" role="button" id="page2"><a class="page-link text-secondary" style="${currentPageValue + 1 > totalPages ? "pointer-events: none; opacity: 0.6;" : ""}">${currentPageValue + 1}</a></li>
-                                        <li class="page-item ${currentPageValue + 2 > totalPages ? "disabled" : ""}" role="button" id="page3"><a class="page-link text-secondary" style="${currentPageValue + 2 > totalPages ? "pointer-events: none; opacity: 0.6;" : ""}">${currentPageValue + 2}</a></li>
+                                        <li class="page-item active" role="button" id="page1"><a class="page-link">${currentPageValue}</a></li>
+                                        <li class="page-item ${currentPageValue + 1 > totalPages ? "disabled" : ""}" role="button" id="page2"><a class="page-link" style="${currentPageValue + 1 > totalPages ? "pointer-events: none; opacity: 0.5;" : ""}">${currentPageValue + 1}</a></li>
+                                        <li class="page-item ${currentPageValue + 2 > totalPages ? "disabled" : ""}" role="button" id="page3"><a class="page-link" style="${currentPageValue + 2 > totalPages ? "pointer-events: none; opacity: 0.5;" : ""}">${currentPageValue + 2}</a></li>
                                         <li class="page-item ${currentPageValue + 3 > totalPages ? "disabled" : ""}" role="button" id="nextPage">
-                                            <a class="page-link" style="color: var(--brand-teal); ${currentPageValue + 3 > totalPages ? "pointer-events: none; opacity: 0.6;" : ""}">Next</a>
+                                            <a class="page-link" style="${currentPageValue + 3 > totalPages ? "pointer-events: none; opacity: 0.5;" : ""}">Next</a>
                                         </li>
                                         <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
                                         <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
@@ -1041,6 +2158,8 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                         });
                                     <\/script>`;
                             }
+
+                            dashboardPage += `</div>`; // close wrapper
                         }
 
                         // ─── SMTR RECORD DETAIL VIEW ─────────────────────────────────────────────────
@@ -1061,12 +2180,11 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                             var transactionDataObj = JSON.parse(https.requestRestlet(options).body);
                             var transactionData = transactionDataObj.smtrTransactionData;
 
-                            dashboardPage += `<div class="container-fluid p-0 detail-page">
-                                <div class="d-flex justify-content-between detail-toolbar">
-                                    <div class="d-flex align-items-center gap-3 mb-4">
-                                        <i class="bi bi-list menu-toggle-btn"></i>
-                                        <form class="callingmethod m-0" method="post" style="line-height: 0; display:inline;">
-                                            <i class="bi bi-arrow-left-circle-fill text-orange fs-4" role="button"></i>
+                            dashboardPage += `<div class="detail-page">
+                                <div class="detail-toolbar">
+                                    <div style="display:flex; align-items:center; gap:14px;">
+                                        <form class="callingmethod m-0" method="post" style="display:inline;">
+                                            <button type="button" class="back-btn" aria-label="Back"><i class="bi bi-arrow-left"></i></button>
                                             <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
                                             <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
                                             <input type="hidden" name="dashboard" value="SMTRList"/>
@@ -1078,7 +2196,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                         <h1 class="page-title m-0">SMTR Details</h1>
                                     </div>
                                     <div class="detail-actions">
-                                        <form method="post" style="display:flex; flex-direction:row; gap:5px; flex-wrap:nowrap; align-items:center;">
+                                        <form method="post" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                                             <input type="hidden" name="approvedTransactionDetails" />
                                             <input type="hidden" name="smtrAccess" value="${smtrAccess}"/>
                                             <input type="hidden" name="vendorEmail" value="${context.request.parameters.vendorEmail}"/>
@@ -1090,33 +2208,31 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                             <input type="hidden" name="dashboard" value="SMTRList"/>
                                             <input type="hidden" name="smtrInternalId" value="${transactionData.internalid}"/>`;
 
-                            log.debug("smtrUserRole for record view", smtrUserRoleParam);
                             if (smtrUserRoleParam === "SMTR Supervisor" || smtrUserRoleParam === "" || !smtrUserRoleParam) {
-                                log.debug("transactionData.status", transactionData.status);
                                 if (transactionData.status === "Pending Approval") {
-                                    dashboardPage += `<button type="button" class="btn" style="background-color: var(--brand-teal); color: #ffff;" id="approveButton" name="approvalStatus" value="Approved">Approve</button>
-                                                  <button type="submit" class="btn" style="background-color: var(--brand-orange); color: #ffff;" name="approvalStatus" value="Rejected">Reject</button>`;
+                                    dashboardPage += `<button type="button" class="btn-approve" id="approveButton" name="approvalStatus" value="Approved">Approve</button>
+                                                      <button type="submit" class="btn-reject" name="approvalStatus" value="Rejected">Reject</button>`;
                                 }
                             }
                             if (smtrUserRoleParam === "Shipping Clerk") {
                                 if (transactionData.status === "Approved") {
-                                    dashboardPage += `<button type="button" class="btn" style="background-color: var(--brand-orange); color: #ffff;" onclick="editSTMR()" id="editButton">Edit</button>
-                                                <button type="button" class="btn d-none" style="background-color: var(--brand-orange); color: #ffff;" onclick="saveSTMR()" id="saveButton">Save</button>
-                                                <button type="button" class="btn" style="background-color: var(--brand-teal); color: #ffff;" id="fulfillButton" name="approvalStatus" value="Fulfilled">Mark as Fulfilled</button>
+                                    dashboardPage += `<button type="button" class="btn-edit" onclick="editSTMR()" id="editButton">Edit</button>
+                                                <button type="button" class="btn-save" style="display:none;" onclick="saveSTMR()" id="saveButton">Save</button>
+                                                <button type="button" class="btn-fulfill" id="fulfillButton" name="approvalStatus" value="Fulfilled">Mark as Fulfilled</button>
                                                 <input type="hidden" name="smtrDetails" id="smtrDetails" value=""/>`;
                                 } else {
                                     if (transactionData.invadjReference) {
                                         const fullStr = transactionData.invadjReference || "";
                                         const docNum = fullStr.substring(fullStr.indexOf("#"));
-                                        dashboardPage += `<h6 class="text-teal mt-3 me-3">Inventory Adjustment: <span class="text-orange fs-6 fw-semibold">${docNum || "-"}</span></h6>`;
+                                        dashboardPage += `<div style="color: var(--brand-primary); font-weight:600;">Inventory Adjustment: <span style="color: var(--brand-accent-dark);">${docNum || "-"}</span></div>`;
                                     }
                                 }
                             }
 
                             dashboardPage += `<script>
                                 function editSTMR() {
-                                    document.getElementById("editButton").classList.add("d-none");
-                                    document.getElementById("saveButton").classList.remove("d-none");
+                                    document.getElementById("editButton").style.display = "none";
+                                    document.getElementById("saveButton").style.display = "inline-flex";
                                     document.getElementById("customerName").readOnly = false;
                                     document.getElementById("location").readOnly = false;
                                     document.getElementById("department").readOnly = false;
@@ -1126,8 +2242,8 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                     document.getElementById("trackingNumber").readOnly = false;
                                 }
                                 function saveSTMR() {
-                                    document.getElementById("editButton").classList.remove("d-none");
-                                    document.getElementById("saveButton").classList.add("d-none");
+                                    document.getElementById("editButton").style.display = "inline-flex";
+                                    document.getElementById("saveButton").style.display = "none";
                                     document.getElementById("customerName").readOnly = true;
                                     document.getElementById("location").readOnly = true;
                                     document.getElementById("department").readOnly = true;
@@ -1145,83 +2261,69 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                     };
                                     document.getElementById("smtrDetails").value = JSON.stringify(smtrDetails);
                                 });
-                            <\/script>`;
-
-                            dashboardPage += `</form>
+                            <\/script>
+                                        </form>
                                     </div>
                                 </div>
-                                <div class="row g-4 mb-4">
-                                    <div class="col-12">
-                                        <div class="card card-stats h-100 p-3">
-                                            <div class="row g-3 align-items-start">
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Document Number</h6><p class="text-orange fw-semibold fs-6 m-0">${transactionData.name || "-"}</p></div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Customer</h6>
-                                                    <select id="customerName" name="customerName" class="form-control form-control-sm" readonly>
-                                                        <option value="${transactionData.customerName || ""}">${transactionData.customerName || "-"}</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">SMTR Type</h6><p class="text-orange fw-semibold fs-6 m-0">${transactionData.smtrType || "-"}</p></div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Requested Arrival Date</h6><p class="text-orange fw-semibold fs-6 m-0">${transactionData.requestedArrivalDate || "-"}</p></div>
-                                            </div>
-                                            <div class="row g-3 align-items-start mt-2">
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Date Needed to Arrive</h6><p class="text-orange fw-semibold fs-6 m-0">${transactionData.dateNeededToArrive || "-"}</p></div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Department</h6>
-                                                    <select id="department" name="department" class="form-control form-control-sm" readonly>
-                                                        <option value="${transactionData.department || ""}">${transactionData.department || "-"}</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Location</h6>
-                                                    <select id="location" name="location" class="form-control form-control-sm" readonly>
-                                                        <option value="${transactionData.location || ""}">${transactionData.location || "-"}</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Total</h6><p class="text-orange fw-semibold fs-6 m-0">${transactionData.totalAmount || "-"}</p></div>
-                                            </div>
-                                            <div class="row g-3 align-items-start mt-2">
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Status</h6><p class="text-orange fw-semibold fs-6 m-0">${transactionData.status || "-"}</p></div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Purchase Purpose</h6><input type="text" id="purchasePurpose" name="purchasePurpose" class="form-control form-control-sm" value="${transactionData.purchasePurpose || ""}" readonly/></div>
-                                                <div class="col-12 col-md-3 text-teal"><h6 class="card-title mb-2">Tracking Number</h6><input type="text" id="trackingNumber" name="trackingNumber" class="form-control form-control-sm" value="${transactionData.trackingNumber || ""}" readonly/></div>
-                                                <div class="col-12 col-md-3 text-teal"><h6 class="card-title mb-2">Memo</h6><textarea id="memo" name="memo" class="form-control form-control-sm" rows="3" readonly>${transactionData.memo || ""}</textarea></div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Next Approver</h6><p class="text-orange fw-semibold fs-6 m-0">${transactionData.nextApprover || "-"}</p></div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Ship To</h6><textarea id="shipTo" name="shipTo" class="form-control form-control-sm" rows="3" readonly>${transactionData.shipTo || ""}</textarea></div>
-                                                <div class="col-6 col-md-3 text-teal"><h6 class="card-title mb-2">Currency</h6><p class="text-orange fw-semibold fs-6 m-0">${transactionData.currency || "-"}</p></div>
-                                            </div>
-                                        </div>`;
+
+                                <div class="detail-card">
+                                    <div class="detail-grid">
+                                        <div class="detail-field"><span class="d-label">Document Number</span><p class="d-value">${transactionData.name || "-"}</p></div>
+                                        <div class="detail-field"><span class="d-label">Customer</span>
+                                            <select id="customerName" name="customerName" class="form-select" readonly>
+                                                <option value="${transactionData.customerName || ""}">${transactionData.customerName || "-"}</option>
+                                            </select>
+                                        </div>
+                                        <div class="detail-field"><span class="d-label">SMTR Type</span><p class="d-value">${transactionData.smtrType || "-"}</p></div>
+                                        <div class="detail-field"><span class="d-label">Requested Arrival Date</span><p class="d-value">${transactionData.requestedArrivalDate || "-"}</p></div>
+
+                                        <div class="detail-field"><span class="d-label">Date Needed to Arrive</span><p class="d-value">${transactionData.dateNeededToArrive || "-"}</p></div>
+                                        <div class="detail-field"><span class="d-label">Department</span>
+                                            <select id="department" name="department" class="form-select" readonly>
+                                                <option value="${transactionData.department || ""}">${transactionData.department || "-"}</option>
+                                            </select>
+                                        </div>
+                                        <div class="detail-field"><span class="d-label">Location</span>
+                                            <select id="location" name="location" class="form-select" readonly>
+                                                <option value="${transactionData.location || ""}">${transactionData.location || "-"}</option>
+                                            </select>
+                                        </div>
+                                        <div class="detail-field"><span class="d-label">Total</span><p class="d-value">${transactionData.totalAmount || "-"}</p></div>
+
+                                        <div class="detail-field"><span class="d-label">Status</span><p class="d-value">${transactionData.status || "-"}</p></div>
+                                        <div class="detail-field"><span class="d-label">Purchase Purpose</span><input type="text" id="purchasePurpose" name="purchasePurpose" class="form-control" value="${transactionData.purchasePurpose || ""}" readonly/></div>
+                                        <div class="detail-field"><span class="d-label">Tracking Number</span><input type="text" id="trackingNumber" name="trackingNumber" class="form-control" value="${transactionData.trackingNumber || ""}" readonly/></div>
+                                        <div class="detail-field"><span class="d-label">Memo</span><textarea id="memo" name="memo" class="form-control" rows="3" readonly>${transactionData.memo || ""}</textarea></div>
+
+                                        <div class="detail-field"><span class="d-label">Next Approver</span><p class="d-value">${transactionData.nextApprover || "-"}</p></div>
+                                        <div class="detail-field"><span class="d-label">Ship To</span><textarea id="shipTo" name="shipTo" class="form-control" rows="3" readonly>${transactionData.shipTo || ""}</textarea></div>
+                                        <div class="detail-field"><span class="d-label">Currency</span><p class="d-value">${transactionData.currency || "-"}</p></div>
+                                    </div>
+                                </div>`;
 
                             var attachments = transactionData.transactionInvoiceAttachment || [];
                             if (attachments.length > 0) {
-                                dashboardPage += `</div>
-                                    </div>
-                                    <div class="row g-4 mb-4">
-                                    <div class="col-12">
-                                        <div class="card card-stats p-3">
-                                            <div class="row g-3 align-items-start">
-                                                <div class="text-teal">
-                                                    <h6 class="card-title mb-2">Attachments</h6>`;
-                                for (var index = 0; index < attachments.length; index++) {
+                                dashboardPage += `<div class="detail-card">
+                                    <span class="d-label" style="display:block; margin-bottom: 10px;">Attachments</span>
+                                    <div style="display:flex; flex-wrap:wrap; gap: 10px;">`;
+                                for (var aIdx = 0; aIdx < attachments.length; aIdx++) {
                                     try {
-                                        var transactionAttachment = file.load({ id: attachments[index] });
+                                        var transactionAttachment = file.load({ id: attachments[aIdx] });
                                         var transactionAttachmentUrl = transactionAttachment.url;
                                         var host = url.resolveDomain({ hostType: url.HostType.APPLICATION });
                                         var fullUrl = "https://" + host + transactionAttachmentUrl;
-                                        dashboardPage += `<div class="p-2"><a href="${fullUrl}" target="_blank" class="btn-link btn-sm">${transactionAttachment.name}</a></div>`;
+                                        dashboardPage += `<a href="${fullUrl}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; padding: 8px 14px; border:1px solid var(--brand-border); border-radius:8px; color: var(--brand-primary); text-decoration:none; font-size: 13.5px; background:#FAFBFD;"><i class="bi bi-paperclip"></i> ${transactionAttachment.name}</a>`;
                                     } catch (e) {
                                         log.error("Attachment Load Error", e);
                                     }
                                 }
-                                dashboardPage += `</div></div></div></div></div>`;
+                                dashboardPage += `</div></div>`;
                             }
 
-                            dashboardPage += `</div>
-                                </div>
-                                <div class="card card-table mb-5">
-                                    <div class="card-header bg-white py-3">
-                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                            <div><h5 class="m-0 font-weight-bold">Items</h5></div>
-                                        </div>
-                                    </div>
+                            dashboardPage += `<div class="panel">
+                                    <div class="panel-header"><h5>Items</h5></div>
                                     <div class="table-responsive">
-                                        <table class="table table-hover mb-0 align-middle detail-items-table">
+                                        <table class="table detail-items-table">
                                             <thead>
                                                 <tr>
                                                     <th>Item</th><th>Description</th><th>Quantity</th>
@@ -1242,13 +2344,13 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                     </tr>`;
                                 }
                             } else {
-                                dashboardPage += `<tr><td colspan="5" class="text-center">No items found</td></tr>`;
+                                dashboardPage += `<tr><td colspan="5" style="text-align:center; color: var(--brand-muted); padding: 30px;">No items found</td></tr>`;
                             }
 
                             dashboardPage += `</tbody></table></div></div></div>`;
                         }
 
-                        dashboardPage += `</div>`;
+                        dashboardPage += `</div>`; // close #dashboardSection
 
                         // ─── PROFILE SECTION ─────────────────────────────────────────────────────────
                         if (!Object.keys(userDetailsResponse).length && context.request.parameters.vendorEmail) {
@@ -1274,28 +2376,22 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                         var location = userDetailsResponse?.roleDetails?.location || userDetailsResponse?.roleDetails?.locationName || "N/A";
                         var subsidiary = userDetailsResponse?.roleDetails?.transactionSubsidiary || userDetailsResponse?.roleDetails?.subsidiaryName || "N/A";
 
-                        dashboardPage += `<div class="container-fluid p-0 d-none" id="profileSection">
-                            <div class="d-flex align-items-center gap-3 mb-4">
-                                <i class="bi bi-list menu-toggle-btn"></i>
-                                <h1 class="page-title m-0">My Profile</h1>
-                            </div>
-                            <div class="card p-4 mb-4">
-                                <div class="row align-items-center gy-4">
-                                    <div class="col-md-3 text-center">
-                                        <i class="bi bi-person-circle" style="font-size:100px; color:#35858B;"></i>
+                        dashboardPage += `<div id="profileSection" style="display:none;">
+                            <h1 class="page-title">My Profile</h1>
+                            <p class="page-subtitle">Your account and role details</p>
+                            <div class="profile-card">
+                                <div class="profile-grid">
+                                    <div style="text-align:center;">
+                                        <div class="profile-avatar"><i class="bi bi-person-circle"></i></div>
                                     </div>
-                                    <div class="col-md-9">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-4"><h6 style="font-weight:700; color:#6c757d;">Name</h6><p style="color: var(--brand-orange);">${employeeName || "N/A"}</p></div>
-                                                <div class="mb-4"><h6 style="font-weight:700; color:#6c757d;">Subsidiary</h6><p style="color: var(--brand-orange);">${subsidiary || "N/A"}</p></div>
-                                                <div class="mb-4"><h6 style="font-weight:700; color:#6c757d;">Role</h6><p style="color: var(--brand-orange);">${roleName || "N/A"}</p></div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="mb-4"><h6 style="font-weight:700; color:#6c757d;">Email</h6><p style="color: var(--brand-orange);">${employeeEmail || "N/A"}</p></div>
-                                                <div class="mb-4"><h6 style="font-weight:700; color:#6c757d;">Location</h6><p style="color: var(--brand-orange);">${location || "N/A"}</p></div>
-                                            </div>
-                                        </div>
+                                    <div>
+                                        <div class="profile-field"><div class="pf-label">Name</div><p class="pf-value">${employeeName || "N/A"}</p></div>
+                                        <div class="profile-field"><div class="pf-label">Subsidiary</div><p class="pf-value">${subsidiary || "N/A"}</p></div>
+                                        <div class="profile-field"><div class="pf-label">Role</div><p class="pf-value">${roleName || "N/A"}</p></div>
+                                    </div>
+                                    <div>
+                                        <div class="profile-field"><div class="pf-label">Email</div><p class="pf-value">${employeeEmail || "N/A"}</p></div>
+                                        <div class="profile-field"><div class="pf-label">Location</div><p class="pf-value">${location || "N/A"}</p></div>
                                     </div>
                                 </div>
                             </div>
@@ -1306,12 +2402,12 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                         dashboardPage += `<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
                             <script>
                                 document.addEventListener("DOMContentLoaded", function() {
-                                    var sidebar = document.querySelector(".sidebar");
-                                    var closeButton = document.getElementById("sidebar-close");
+                                    var sidebar = document.getElementById("appSidebar");
                                     var dashboardSection = document.getElementById("dashboardSection");
                                     var profileSection = document.getElementById("profileSection");
                                     var dashboardNavLink = document.getElementById("dashboardNavLink");
                                     var profileNavLink = document.getElementById("profileNavLink");
+                                    var menuToggleBtn = document.getElementById("menuToggleBtn");
 
                                     var logoutBtn = document.getElementById("logoutBtn");
                                     if (logoutBtn) {
@@ -1325,8 +2421,8 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                     function showSection(sectionToShow) {
                                         if (!dashboardSection || !profileSection) return;
                                         var showingProfile = sectionToShow === "profile";
-                                        dashboardSection.classList.toggle("d-none", showingProfile);
-                                        profileSection.classList.toggle("d-none", !showingProfile);
+                                        dashboardSection.style.display = showingProfile ? "none" : "";
+                                        profileSection.style.display = showingProfile ? "" : "none";
                                         if (dashboardNavLink) dashboardNavLink.classList.toggle("active", !showingProfile);
                                         if (profileNavLink) profileNavLink.classList.toggle("active", showingProfile);
                                     }
@@ -1334,18 +2430,21 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                                     if (dashboardNavLink) dashboardNavLink.addEventListener("click", function(e) { e.preventDefault(); showSection("dashboard"); });
                                     if (profileNavLink) profileNavLink.addEventListener("click", function(e) { e.preventDefault(); showSection("profile"); });
 
-                                    document.querySelectorAll(".menu-toggle-btn").forEach(function(btn) {
-                                        btn.addEventListener("click", function(e) { e.preventDefault(); sidebar.classList.toggle("show"); });
-                                    });
-
-                                    if (closeButton && sidebar) closeButton.addEventListener("click", function(e) { e.preventDefault(); sidebar.classList.remove("show"); });
+                                    if (menuToggleBtn) menuToggleBtn.addEventListener("click", function(e) { e.preventDefault(); sidebar.classList.toggle("show"); });
 
                                     var initialActiveDashboard = "${activeDashboard || ""}";
                                     if (initialActiveDashboard === "Profile") showSection("profile");
 
                                     document.querySelectorAll(".callingmethod").forEach(function(form) {
                                         form.addEventListener('click', function(event) {
-                                            if (!['BUTTON','INPUT','SELECT','A','LABEL'].includes(event.target.tagName)) this.submit();
+                                            if (!['BUTTON','INPUT','SELECT','A','LABEL','TEXTAREA','OPTION'].includes(event.target.tagName)) this.submit();
+                                        });
+                                    });
+
+                                    document.querySelectorAll(".callingmethod button").forEach(function(btn) {
+                                        btn.addEventListener('click', function(event) {
+                                            event.preventDefault();
+                                            btn.closest('form').submit();
                                         });
                                     });
 
@@ -1393,13 +2492,13 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                     log.debug("OTP Verification Error");
                     context.request.parameters.verified = false;
                     context.response.write(
-                        "<script>alert('Invalid OTP entered. Please try again.');<\/script>" +
-                            verifyPage(
-                                context.request.parameters.employeeInternalId,
-                                context.request.parameters.vendorEmail,
-                                parseBoolean(context.request.parameters.smtrAccess),
-                                parseBoolean(context.request.parameters.smtrSupervisorRoleAcess)
-                            )
+                        verifyPage(
+                            context.request.parameters.employeeInternalId,
+                            context.request.parameters.vendorEmail,
+                            parseBoolean(context.request.parameters.smtrAccess),
+                            parseBoolean(context.request.parameters.smtrSupervisorRoleAcess),
+                            "Invalid OTP entered. Please try again."
+                        )
                     );
                 }
             } else {
@@ -1408,7 +2507,7 @@ define(["N/https", "N/url", "N/log", "N/redirect", "N/file", "N/email", "N/searc
                     context.request.parameters.verified = false;
                     context.response.write(
                         "<script>alert('Another Login Request Detected. Due to security reasons, your session has been terminated.');<\/script>" +
-                            loginPage()
+                        loginPage()
                     );
                 }
             }
